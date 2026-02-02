@@ -1,0 +1,3286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Budget Tracker">
+    <title>Monthly Budget Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        .content-view {
+            display: none;
+        }
+
+        .content-view.active {
+            display: block;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .month-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .month-selector button {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .current-month {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .edit-budgets-btn, .manage-categories-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .budget-item {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .budget-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .budget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .budget-category {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .budget-amounts {
+            display: flex;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .spent {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .budget-limit {
+            color: #666;
+        }
+
+        .remaining {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease, background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .progress-fill.low {
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+        }
+
+        .progress-fill.medium {
+            background: linear-gradient(90deg, #ff9800 0%, #ffb74d 100%);
+        }
+
+        .progress-fill.high {
+            background: linear-gradient(90deg, #f44336 0%, #e57373 100%);
+        }
+
+        .progress-fill.over {
+            background: linear-gradient(90deg, #d32f2f 0%, #c62828 100%);
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button.primary {
+            width: 100%;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button.primary:active {
+            transform: scale(0.98);
+        }
+
+        .transaction {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .transaction-description {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .transaction-amount {
+            font-weight: 700;
+        }
+
+        .transaction-amount.expense {
+            color: #f44336;
+        }
+
+        .transaction-amount.deposit {
+            color: #4caf50;
+        }
+
+        .transaction-details {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .transaction-store {
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .budget-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .budget-input-group label {
+            flex: 1;
+            margin: 0;
+        }
+
+        .budget-input-group input {
+            flex: 1;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-tab {
+            background: #f0f0f0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .summary-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .summary-amount {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .summary-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .category-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .type-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .type-btn {
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .type-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .type-btn:active {
+            transform: scale(0.97);
+        }
+
+        .category-btn {
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .category-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .category-btn:active {
+            transform: scale(0.97);
+        }
+
+        .edit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+
+        .upload-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .upload-section h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .upload-btn {
+            background: white;
+            color: #f5576c;
+            border: none;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-btn:active {
+            transform: scale(0.97);
+        }
+
+        #image-input {
+            display: none;
+        }
+
+        .processing-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .processing-overlay.active {
+            display: flex;
+        }
+
+        .processing-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .processing-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .processing-text {
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .processing-subtext {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .merchant-learning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .merchant-learning strong {
+            color: #000;
+        }
+
+        .transaction-selector-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .transaction-selector-modal.active {
+            display: flex;
+        }
+
+        .transaction-selector-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .transaction-selector-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .transaction-selector-subtext {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .transaction-option {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .transaction-option:hover {
+            background: #f0f0f0;
+        }
+
+        .transaction-option:active {
+            transform: scale(0.98);
+            border-color: #667eea;
+        }
+
+        .transaction-option-store {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+
+        .transaction-option-details {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .transaction-option-amount {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .close-selector-btn {
+            width: 100%;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0 30px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 8px 12px;
+            transition: all 0.3s;
+            min-width: 70px;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn.active {
+            color: #667eea;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Header visibility - only show on expenses view */
+        .header {
+            display: none;
+        }
+
+        body.expenses-active .header {
+            display: block;
+        }
+
+        /* Budget breakdown styles */
+        .breakdown-category {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .breakdown-category:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .breakdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-category-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .breakdown-total {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .breakdown-items {
+            margin-top: 10px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .breakdown-item-name {
+            color: #666;
+        }
+
+        .breakdown-item-amount {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .breakdown-add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .breakdown-delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .category-list {
+            margin-top: 15px;
+        }
+
+        .category-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .category-list-item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .delete-category-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Monthly Budget</h1>
+        <div class="month-selector">
+            <button onclick="changeMonth(-1)">←</button>
+            <div class="current-month" id="current-month"></div>
+            <button onclick="changeMonth(1)">→</button>
+        </div>
+    </div>
+
+    <div class="container content-view active" id="checking-view">
+        <!-- Consolidated Account Balance -->
+        <div class="section">
+            <div class="section-title">🏦 Checking Account Dashboard</div>
+            
+            <div class="summary-total">
+                <div class="summary-label">Total Balance</div>
+                <div class="summary-amount" id="checking-total-balance">$0.00</div>
+                <div class="summary-subtitle">Combined balance across all accounts</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Emergency Fund</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #667eea; margin-bottom: 10px;" id="checking-emergency-balance">$0.00</div>
+                    <button onclick="openStartingBalanceModal()" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">Set Starting</button>
+                </div>
+                <div style="background: rgba(156, 39, 176, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Monthly Budget</div>
+                    <select id="monthly-budget-selector" onchange="updateMonthlyBudgetDisplay()" style="width: 100%; padding: 6px; border: 2px solid #9c27b0; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: white; color: #9c27b0; font-weight: 600;">
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                    <div style="font-size: 20px; font-weight: 600; color: #9c27b0; margin-bottom: 10px;" id="checking-monthly-balance">$0.00</div>
+                    <button onclick="navigateTo('expenses')" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Expenses</button>
+                </div>
+                <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Free Money</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #4caf50; margin-bottom: 10px;" id="checking-free-money-balance">$0.00</div>
+                    <button onclick="navigateTo('free')" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
+                </div>
+                <div style="background: rgba(255, 152, 0, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Wedding</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #ff9800; margin-bottom: 10px;" id="checking-wedding-balance">$0.00</div>
+                    <button onclick="navigateTo('wedding')" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Fund Transactions -->
+        <div class="section">
+            <div class="section-title">Emergency Fund Transactions</div>
+            
+            <div class="input-group">
+                <label for="checking-description">Description</label>
+                <input type="text" id="checking-description" placeholder="e.g., ATM Withdrawal">
+            </div>
+
+            <div class="input-group">
+                <label for="checking-amount">Amount</label>
+                <input type="number" id="checking-amount" placeholder="0.00" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label for="checking-date">Date</label>
+                <input type="date" id="checking-date">
+            </div>
+
+            <div class="input-group">
+                <label>Type</label>
+                <div class="type-buttons">
+                    <button type="button" class="type-btn" data-type="in" id="checking-type-in">Money In</button>
+                    <button type="button" class="type-btn active" data-type="out" id="checking-type-out">Money Out</button>
+                </div>
+            </div>
+
+            <button class="primary" onclick="addCheckingTransaction()" id="checking-submit-btn">Add Transaction</button>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="section">
+            <div class="section-title">Emergency Fund History</div>
+            <div id="checking-transaction-list"></div>
+        </div>
+    </div>
+
+    <!-- Monthly Expenses View -->
+    <div class="container content-view" id="expenses-view">
+        <!-- Budget Overview -->
+        <div class="section">
+            <div class="section-title" style="display: block;">
+                Budget Overview
+                <div style="margin-top: 10px;">
+                    <button class="manage-categories-btn" onclick="openManageCategoriesModal()">Manage Categories</button>
+                    <button class="edit-budgets-btn" onclick="openBudgetModal()">Edit Budgets</button>
+                </div>
+            </div>
+            
+            <div class="summary-total">
+                <div class="summary-label">Total Remaining This Month</div>
+                <div class="summary-amount" id="total-remaining">$0.00</div>
+                <div class="summary-subtitle" id="budget-summary"></div>
+            </div>
+
+            <div id="budget-overview"></div>
+        </div>
+
+        <!-- Add Transaction -->
+        <div class="section">
+            <div class="section-title">Add Transaction</div>
+            
+            <!-- Upload Receipt Section -->
+            <div class="upload-section">
+                <h3>📸 Scan Transaction</h3>
+                <div class="upload-btn-wrapper">
+                    <button class="upload-btn" onclick="document.getElementById('image-input').click()">
+                        📷 Upload Screenshot
+                    </button>
+                    <input type="file" id="image-input" accept="image/*">
+                </div>
+            </div>
+
+            <div id="merchant-learning-message"></div>
+            
+            <div class="input-group">
+                <label for="description">Description</label>
+                <input type="text" id="description" placeholder="e.g., Groceries">
+            </div>
+
+            <div class="input-group">
+                <label for="store">Store</label>
+                <input type="text" id="store" placeholder="e.g., Walmart">
+            </div>
+
+            <div class="input-group">
+                <label for="amount">Amount</label>
+                <input type="number" id="amount" placeholder="0.00" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label for="date">Date</label>
+                <input type="date" id="date">
+            </div>
+
+            <div class="input-group">
+                <label>Type</label>
+                <div class="type-buttons">
+                    <button type="button" class="type-btn active" data-type="expense">Expense</button>
+                    <button type="button" class="type-btn" data-type="deposit">Deposit</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Category</label>
+                <div class="category-buttons" id="category-buttons">
+                    <!-- Categories will be dynamically populated here -->
+                </div>
+            </div>
+
+            <button class="primary" onclick="addTransaction()" id="submit-btn">Add Transaction</button>
+        </div>
+
+        <!-- Transactions -->
+        <div class="section">
+            <div class="section-title">Transactions</div>
+            
+            <div class="filter-tabs" id="filter-tabs">
+                <!-- Filter tabs will be dynamically populated here -->
+            </div>
+
+            <div id="transaction-list"></div>
+        </div>
+    </div>
+
+    <!-- Free Money View -->
+    <div class="container content-view" id="free-money-view">
+        <!-- Free Money Balance -->
+        <div class="section">
+            <div class="section-title">💸 Free Money Account</div>
+            
+            <div class="summary-total">
+                <div class="summary-label">Current Balance</div>
+                <div class="summary-amount" id="free-money-balance">$0.00</div>
+                <div class="summary-subtitle" id="free-money-summary">Total saved in Free Money</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total In</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #4caf50;" id="free-money-in">$0.00</div>
+                </div>
+                <div style="background: rgba(244, 67, 54, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total Out</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #f44336;" id="free-money-out">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Free Money Transaction -->
+        <div class="section">
+            <div class="section-title">Add Transaction</div>
+            
+            <div class="input-group">
+                <label for="free-description">Description</label>
+                <input type="text" id="free-description" placeholder="e.g., Savings deposit">
+            </div>
+
+            <div class="input-group">
+                <label for="free-amount">Amount</label>
+                <input type="number" id="free-amount" placeholder="0.00" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label for="free-date">Date</label>
+                <input type="date" id="free-date">
+            </div>
+
+            <div class="input-group">
+                <label>Type</label>
+                <div class="type-buttons">
+                    <button type="button" class="type-btn active" data-type="in" id="free-type-in">Money In</button>
+                    <button type="button" class="type-btn" data-type="out" id="free-type-out">Money Out</button>
+                </div>
+            </div>
+
+            <button class="primary" onclick="addFreeMoneyTransaction()" id="free-submit-btn">Add Transaction</button>
+        </div>
+
+        <!-- Free Money Transactions -->
+        <div class="section">
+            <div class="section-title">Transaction History</div>
+            <div id="free-money-list"></div>
+        </div>
+    </div>
+
+    <!-- Wedding Savings View -->
+    <div class="container content-view" id="wedding-view">
+        <!-- Wedding Balance -->
+        <div class="section">
+            <div class="section-title">🏛️ Wedding Account</div>
+            
+            <div class="summary-total" style="background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);">
+                <div class="summary-label">Current Balance</div>
+                <div class="summary-amount" id="wedding-balance">$0.00</div>
+                <div class="summary-subtitle" id="wedding-summary">Total saved in Wedding</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total In</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #4caf50;" id="wedding-in">$0.00</div>
+                </div>
+                <div style="background: rgba(244, 67, 54, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total Out</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #f44336;" id="wedding-out">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Wedding Transaction -->
+        <div class="section">
+            <div class="section-title">Add Transaction</div>
+            
+            <div class="input-group">
+                <label for="wedding-description">Description</label>
+                <input type="text" id="wedding-description" placeholder="e.g., Monthly deposit">
+            </div>
+
+            <div class="input-group">
+                <label for="wedding-amount">Amount</label>
+                <input type="number" id="wedding-amount" placeholder="0.00" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label for="wedding-date">Date</label>
+                <input type="date" id="wedding-date">
+            </div>
+
+            <div class="input-group">
+                <label>Type</label>
+                <div class="type-buttons">
+                    <button type="button" class="type-btn active" data-type="in" id="wedding-type-in">Money In</button>
+                    <button type="button" class="type-btn" data-type="out" id="wedding-type-out">Money Out</button>
+                </div>
+            </div>
+
+            <button class="primary" onclick="addWeddingTransaction()" id="wedding-submit-btn">Add Transaction</button>
+        </div>
+
+        <!-- Wedding Transactions -->
+        <div class="section">
+            <div class="section-title">Transaction History</div>
+            <div id="wedding-list"></div>
+        </div>
+    </div>
+
+    <!-- Manage Categories Modal -->
+    <div class="modal" id="manage-categories-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Manage Budget Categories</div>
+                <button class="close-btn" onclick="closeManageCategoriesModal()">&times;</button>
+            </div>
+            
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+                Add, edit, or remove budget categories. Note: Paycheck and Free Money are system categories.
+            </p>
+
+            <div class="input-group">
+                <label for="new-category-name">New Category Name</label>
+                <input type="text" id="new-category-name" placeholder="e.g., Entertainment">
+            </div>
+
+            <button class="primary" onclick="addNewCategory()">Add Category</button>
+
+            <div class="category-list" id="category-list">
+                <!-- Categories will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Edit Modal -->
+    <div class="modal" id="budget-modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-header">
+                <div class="modal-title">Budget Setup</div>
+                <button class="close-btn" onclick="closeBudgetModal()">&times;</button>
+            </div>
+            
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+                Define what makes up each budget category. Add individual items and the total will be calculated automatically.
+            </p>
+            
+            <div id="budget-breakdown-in-modal"></div>
+        </div>
+    </div>
+
+    <!-- Budget Item Modal -->
+    <div class="modal" id="budget-item-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="budget-item-modal-title">Add Item to Subscriptions</div>
+                <button class="close-btn" onclick="closeBudgetItemModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label for="budget-item-name">Item Name</label>
+                <input type="text" id="budget-item-name" placeholder="e.g., Netflix">
+            </div>
+            
+            <div class="input-group">
+                <label for="budget-item-amount">Amount</label>
+                <input type="number" id="budget-item-amount" step="0.01" placeholder="0.00">
+            </div>
+
+            <button class="primary" onclick="saveBudgetItem()">Add Item</button>
+        </div>
+    </div>
+
+    <!-- Starting Balance Modal -->
+    <div class="modal" id="starting-balance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Set Starting Balance</div>
+                <button class="close-btn" onclick="closeStartingBalanceModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label for="starting-balance-input">Starting Balance</label>
+                <input type="number" id="starting-balance-input" step="0.01" placeholder="0.00">
+            </div>
+            
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                This is your initial checking account balance (e.g., your emergency fund). Transactions will be added/subtracted from this amount.
+            </p>
+
+            <button class="primary" onclick="saveStartingBalance()">Save Starting Balance</button>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processing-overlay">
+        <div class="processing-content">
+            <div class="processing-spinner"></div>
+            <div class="processing-text">Scanning Image...</div>
+            <div class="processing-subtext">Extracting transaction data</div>
+        </div>
+    </div>
+
+    <!-- Transaction Selector Modal -->
+    <div class="transaction-selector-modal" id="transaction-selector">
+        <div class="transaction-selector-content">
+            <div class="transaction-selector-header">Select Transaction</div>
+            <div class="transaction-selector-subtext">Found multiple transactions - tap one to add it:</div>
+            <div id="transaction-options"></div>
+            <button class="close-selector-btn" onclick="closeTransactionSelector()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-btn active" onclick="navigateTo('checking')">
+            <div class="nav-icon">🏦</div>
+            <div class="nav-label">Checking</div>
+        </button>
+        <button class="nav-btn" onclick="navigateTo('expenses')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-label">Expenses</div>
+        </button>
+        <button class="nav-btn" onclick="navigateTo('free')">
+            <div class="nav-icon">💸</div>
+            <div class="nav-label">Free Money</div>
+        </button>
+        <button class="nav-btn" onclick="navigateTo('wedding')">
+            <div class="nav-icon">🏛️</div>
+            <div class="nav-label">Wedding</div>
+        </button>
+    </div>
+
+    <script>
+        // Initialize default categories if none exist
+        function getDefaultCategories() {
+            return {
+                'Paycheck': 0,
+                'Subscriptions': 159,
+                'Transportation': 455,
+                'Car Payment': 384,
+                'Food & Hygiene': 281,
+                'Free Money': 221
+            };
+        }
+
+        function getDefaultCategoryList() {
+            return ['Paycheck', 'Subscriptions', 'Transportation', 'Car Payment', 'Food & Hygiene', 'Free Money'];
+        }
+
+        // Data structure
+        let categoryList = JSON.parse(localStorage.getItem('categoryList')) || getDefaultCategoryList();
+        let budgets = JSON.parse(localStorage.getItem('budgets')) || getDefaultCategories();
+
+        // Ensure all categories in list have budget entries
+        categoryList.forEach(cat => {
+            if (budgets[cat] === undefined) {
+                budgets[cat] = 0;
+            }
+        });
+
+        // Ensure breakdown exists for all categories
+        let budgetBreakdown = JSON.parse(localStorage.getItem('budgetBreakdown')) || {};
+        categoryList.forEach(cat => {
+            if (!budgetBreakdown[cat]) {
+                budgetBreakdown[cat] = [];
+            }
+        });
+
+        let currentBudgetCategory = null; // Track which category is being edited
+        let selectedCheckingCategory = null; // Track selected category in checking form
+        let selectedCheckingType = 'out'; // Default type for checking account
+        let editingCheckingId = null; // Track if we're editing checking transaction
+
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let freeMoneyTransactions = JSON.parse(localStorage.getItem('freeMoneyTransactions')) || [];
+        let weddingTransactions = JSON.parse(localStorage.getItem('weddingTransactions')) || [];
+        let checkingTransactions = JSON.parse(localStorage.getItem('checkingTransactions')) || [];
+        let checkingStartingBalance = parseFloat(localStorage.getItem('checkingStartingBalance')) || 0;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let currentFilter = 'all';
+        let selectedCategory = null; // No default category
+        let selectedType = 'expense'; // Default type
+        let editingTransactionId = null; // Track if we're editing
+        let currentView = 'checking'; // Track current view
+        let editingFreeMoneyId = null; // Track if we're editing free money transaction
+        let selectedFreeMoneyType = 'in'; // Default type for free money
+        let editingWeddingId = null; // Track if we're editing wedding transaction
+        let selectedWeddingType = 'in'; // Default type for wedding
+
+        // Merchant learning database
+        let merchantDatabase = JSON.parse(localStorage.getItem('merchantDatabase')) || {};
+
+        // Save category list
+        function saveCategoryList() {
+            localStorage.setItem('categoryList', JSON.stringify(categoryList));
+        }
+
+        // Render category buttons dynamically
+        function renderCategoryButtons() {
+            const container = document.getElementById('category-buttons');
+            container.innerHTML = '';
+            
+            categoryList.forEach(category => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'category-btn';
+                button.dataset.category = category;
+                
+                // Add emoji for Paycheck
+                if (category === 'Paycheck') {
+                    button.textContent = '💰 ' + category;
+                } else {
+                    button.textContent = category;
+                }
+                
+                container.appendChild(button);
+            });
+
+            // Re-attach event listeners
+            attachCategoryButtonListeners();
+        }
+
+        // Render filter tabs dynamically
+        function renderFilterTabs() {
+            const container = document.getElementById('filter-tabs');
+            container.innerHTML = '';
+            
+            // Add "All" tab first
+            const allTab = document.createElement('button');
+            allTab.className = 'filter-tab active';
+            allTab.onclick = () => filterCategory('all');
+            allTab.textContent = 'All';
+            container.appendChild(allTab);
+            
+            // Add category tabs
+            categoryList.forEach(category => {
+                const tab = document.createElement('button');
+                tab.className = 'filter-tab';
+                tab.onclick = () => filterCategory(category);
+                
+                // Add emoji for Paycheck
+                if (category === 'Paycheck') {
+                    tab.textContent = '💰 ' + category;
+                } else {
+                    tab.textContent = category;
+                }
+                
+                container.appendChild(tab);
+            });
+        }
+
+        // Attach event listeners to category buttons
+        function attachCategoryButtonListeners() {
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedCategory = this.dataset.category;
+                });
+            });
+        }
+
+        // Open Manage Categories Modal
+        function openManageCategoriesModal() {
+            renderCategoryListInModal();
+            document.getElementById('manage-categories-modal').classList.add('active');
+        }
+
+        function closeManageCategoriesModal() {
+            document.getElementById('manage-categories-modal').classList.remove('active');
+            document.getElementById('new-category-name').value = '';
+        }
+
+        // Render category list in modal
+        function renderCategoryListInModal() {
+            const container = document.getElementById('category-list');
+            container.innerHTML = '';
+            
+            categoryList.forEach(category => {
+                // Don't allow deleting Paycheck or Free Money
+                const isSystemCategory = category === 'Paycheck' || category === 'Free Money';
+                
+                const item = document.createElement('div');
+                item.className = 'category-list-item';
+                
+                const name = document.createElement('div');
+                name.className = 'category-list-item-name';
+                name.textContent = category + (isSystemCategory ? ' (System)' : '');
+                
+                item.appendChild(name);
+                
+                if (!isSystemCategory) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-category-btn';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => deleteCategory(category);
+                    item.appendChild(deleteBtn);
+                }
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Add new category
+        function addNewCategory() {
+            const name = document.getElementById('new-category-name').value.trim();
+            
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            if (categoryList.includes(name)) {
+                alert('Category already exists');
+                return;
+            }
+            
+            categoryList.push(name);
+            budgets[name] = 0;
+            budgetBreakdown[name] = [];
+            
+            saveCategoryList();
+            saveData();
+            
+            renderCategoryListInModal();
+            renderCategoryButtons();
+            renderFilterTabs();
+            updateDisplay();
+            
+            document.getElementById('new-category-name').value = '';
+        }
+
+        // Delete category
+        function deleteCategory(category) {
+            // Check if category has transactions
+            const hasTransactions = transactions.some(t => t.category === category);
+            
+            if (hasTransactions) {
+                const confirmDelete = confirm(`Warning: There are existing transactions in the "${category}" category. If you delete this category, those transactions will become uncategorized. Continue?`);
+                if (!confirmDelete) return;
+            } else {
+                const confirmDelete = confirm(`Delete category "${category}"?`);
+                if (!confirmDelete) return;
+            }
+            
+            // Remove from category list
+            categoryList = categoryList.filter(c => c !== category);
+            
+            // Remove from budgets
+            delete budgets[category];
+            
+            // Remove from breakdown
+            delete budgetBreakdown[category];
+            
+            saveCategoryList();
+            saveData();
+            
+            renderCategoryListInModal();
+            renderCategoryButtons();
+            renderFilterTabs();
+            updateDisplay();
+        }
+
+        // Bottom navigation function
+        function navigateTo(view) {
+            currentView = view;
+            
+            // Update active state of nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.closest('.nav-btn').classList.add('active');
+            }
+            
+            // Update body class for header visibility
+            document.body.className = '';
+            if (view === 'expenses') {
+                document.body.classList.add('expenses-active');
+            }
+            
+            // Hide all views
+            document.querySelectorAll('.content-view').forEach(v => {
+                v.classList.remove('active');
+            });
+            
+            // Show selected view
+            if (view === 'checking') {
+                document.getElementById('checking-view').classList.add('active');
+                updateCheckingDashboard();
+            } else if (view === 'expenses') {
+                document.getElementById('expenses-view').classList.add('active');
+                updateDisplay();
+            } else if (view === 'free') {
+                document.getElementById('free-money-view').classList.add('active');
+                updateFreeMoneyDisplay();
+            } else if (view === 'wedding') {
+                document.getElementById('wedding-view').classList.add('active');
+                updateWeddingDisplay();
+            }
+        }
+
+        // Initialize
+        const dateInput = document.getElementById('date');
+        dateInput.valueAsDate = new Date();
+        const checkingDateInput = document.getElementById('checking-date');
+        checkingDateInput.valueAsDate = new Date();
+        const freeDateInput = document.getElementById('free-date');
+        freeDateInput.valueAsDate = new Date();
+        const weddingDateInput = document.getElementById('wedding-date');
+        weddingDateInput.valueAsDate = new Date();
+        const imageInput = document.getElementById('image-input');
+
+        // Image upload handler
+        imageInput.addEventListener('change', handleImageUpload);
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Show processing overlay
+            document.getElementById('processing-overlay').classList.add('active');
+            document.querySelector('.processing-subtext').textContent = 'Analyzing image with AI...';
+
+            try {
+                // Convert image to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsDataURL(file);
+                });
+
+                const mimeType = file.type;
+
+                // Call Netlify Function instead of Claude API directly
+                const response = await fetch('/.netlify/functions/analyze-transaction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageData: base64Data,
+                        mimeType: mimeType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to analyze image');
+                }
+
+                const parsedTransactions = data.transactions;
+
+                console.log('Claude API Result:', parsedTransactions);
+
+                if (parsedTransactions && parsedTransactions.length > 0) {
+                    if (parsedTransactions.length === 1) {
+                        // Only one transaction - auto-fill directly
+                        fillFormWithTransaction(parsedTransactions[0]);
+                    } else {
+                        // Multiple transactions - show selector
+                        showTransactionSelector(parsedTransactions);
+                    }
+                } else {
+                    alert('No transactions found in the image. Please try a clearer screenshot or enter manually.');
+                }
+
+            } catch (error) {
+                console.error('Image Processing Error:', error);
+                alert('Error analyzing image: ' + error.message + '\n\nPlease try again or enter the transaction manually.');
+            } finally {
+                // Hide processing overlay
+                document.getElementById('processing-overlay').classList.remove('active');
+                // Clear file input
+                imageInput.value = '';
+            }
+        }
+
+        function showTransactionSelector(transactions) {
+            const optionsContainer = document.getElementById('transaction-options');
+            
+            optionsContainer.innerHTML = transactions.map((t, index) => {
+                const dateStr = t.date ? new Date(t.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                }) : 'No date';
+                
+                return `
+                    <div class="transaction-option" onclick="selectTransaction(${index})">
+                        <div class="transaction-option-store">${t.store || t.description || 'Unknown'}</div>
+                        <div class="transaction-option-details">
+                            <span class="transaction-option-amount">$${t.amount.toFixed(2)}</span>
+                            <span>•</span>
+                            <span>${dateStr}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update message based on whether this is initial or remaining
+            const subtextEl = document.querySelector('.transaction-selector-subtext');
+            if (transactions.length === window.initialTransactionCount) {
+                subtextEl.textContent = 'Found multiple transactions - tap one to add it:';
+            } else {
+                subtextEl.textContent = `${transactions.length} transaction${transactions.length > 1 ? 's' : ''} remaining - tap one to add it:`;
+            }
+
+            // Store transactions temporarily
+            if (!window.initialTransactionCount) {
+                window.initialTransactionCount = transactions.length;
+            }
+            window.tempTransactions = transactions;
+            
+            // Show modal
+            document.getElementById('transaction-selector').classList.add('active');
+        }
+
+        function selectTransaction(index) {
+            const transaction = window.tempTransactions[index];
+            
+            // Remove this transaction from the list
+            window.tempTransactions.splice(index, 1);
+            
+            // Close selector temporarily
+            document.getElementById('transaction-selector').classList.remove('active');
+            
+            // Fill form with selected transaction
+            fillFormWithTransaction(transaction);
+            
+            // Store that we have remaining transactions
+            window.hasRemainingTransactions = window.tempTransactions.length > 0;
+        }
+
+        function fillFormWithTransaction(transaction) {
+            // Auto-fill form
+            if (transaction.description) {
+                document.getElementById('description').value = transaction.description;
+            }
+            if (transaction.store) {
+                document.getElementById('store').value = transaction.store;
+            }
+            if (transaction.amount) {
+                document.getElementById('amount').value = transaction.amount;
+            }
+            if (transaction.date) {
+                document.getElementById('date').value = transaction.date;
+            }
+
+            // Try to match merchant to category
+            if (transaction.store) {
+                const matchedCategory = findMerchantCategory(transaction.store);
+                if (matchedCategory) {
+                    // Auto-select category
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.category === matchedCategory) {
+                            btn.classList.add('active');
+                        }
+                    });
+                    selectedCategory = matchedCategory;
+
+                    // Show message
+                    showMerchantLearningMessage(transaction.store, matchedCategory, true);
+                } else {
+                    showMerchantLearningMessage(transaction.store, null, false);
+                }
+            }
+
+            // Scroll to form
+            window.scrollTo({ top: document.querySelector('.section').offsetTop - 80, behavior: 'smooth' });
+        }
+
+        function closeTransactionSelector() {
+            document.getElementById('transaction-selector').classList.remove('active');
+            window.tempTransactions = null;
+            window.hasRemainingTransactions = false;
+            window.initialTransactionCount = null;
+        }
+
+        function parseTransactionText(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            console.log('All OCR lines:', lines);
+
+            // Spanish months mapping
+            const spanishMonths = {
+                'ene': '01', 'enero': '01',
+                'feb': '02', 'febrero': '02',
+                'mar': '03', 'marzo': '03',
+                'abr': '04', 'abril': '04',
+                'may': '05', 'mayo': '05',
+                'jun': '06', 'junio': '06',
+                'jul': '07', 'julio': '07',
+                'ago': '08', 'agosto': '08',
+                'sep': '09', 'septiembre': '09',
+                'oct': '10', 'octubre': '10',
+                'nov': '11', 'noviembre': '11',
+                'dic': '12', 'diciembre': '12'
+            };
+
+            // Find all amounts with their positions in text
+            const negativeAmountRegex = /-\$(\d+)\.(\d{2})/g;
+            const amounts = [];
+            let match;
+            
+            while ((match = negativeAmountRegex.exec(text)) !== null) {
+                amounts.push({
+                    amount: parseFloat(match[1] + '.' + match[2]),
+                    index: match.index,
+                    fullMatch: match[0]
+                });
+            }
+
+            // If no negative amounts, try positive amounts with $ sign
+            if (amounts.length === 0) {
+                const positiveAmountRegex = /\$(\d+)\.(\d{2})/g;
+                while ((match = positiveAmountRegex.exec(text)) !== null) {
+                    const amt = parseFloat(match[1] + '.' + match[2]);
+                    if (amt < 5000) { // Filter out large balances
+                        amounts.push({
+                            amount: amt,
+                            index: match.index,
+                            fullMatch: match[0]
+                        });
+                    }
+                }
+            }
+
+            // If still no amounts, try without $ sign
+            if (amounts.length === 0) {
+                const simpleAmountRegex = /(\d{1,4})\.(\d{2})/g;
+                while ((match = simpleAmountRegex.exec(text)) !== null) {
+                    const amt = parseFloat(match[1] + '.' + match[2]);
+                    if (amt > 0 && amt < 5000) { // Reasonable transaction range
+                        amounts.push({
+                            amount: amt,
+                            index: match.index,
+                            fullMatch: match[0]
+                        });
+                    }
+                }
+            }
+
+            console.log('Found amounts:', amounts);
+
+            if (amounts.length === 0) {
+                return null;
+            }
+
+            // For each amount, find the associated transaction details
+            const transactions = [];
+
+            for (let amountObj of amounts) {
+                const transaction = {
+                    description: null,
+                    store: null,
+                    amount: amountObj.amount,
+                    date: null
+                };
+
+                // Get text around this amount (500 chars before and after)
+                const startPos = Math.max(0, amountObj.index - 500);
+                const endPos = Math.min(text.length, amountObj.index + 100);
+                const contextText = text.substring(startPos, endPos);
+                const contextLines = contextText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                // Find date near this amount
+                const spanishDateRegex = /(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{1,2}),?\s+(\d{4})/i;
+                let dateMatch = contextText.match(spanishDateRegex);
+                
+                if (dateMatch) {
+                    const month = spanishMonths[dateMatch[1].toLowerCase()];
+                    const day = dateMatch[2].padStart(2, '0');
+                    const year = dateMatch[3];
+                    transaction.date = `${year}-${month}-${day}`;
+                } else {
+                    // Try numeric date
+                    const numericDateRegex = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/;
+                    dateMatch = contextText.match(numericDateRegex);
+                    if (dateMatch) {
+                        let month = dateMatch[1].padStart(2, '0');
+                        let day = dateMatch[2].padStart(2, '0');
+                        let year = dateMatch[3];
+                        if (year.length === 2) year = '20' + year;
+                        transaction.date = `${year}-${month}-${day}`;
+                    }
+                }
+
+                // Find merchant name near this amount
+                const merchantPatterns = [
+                    /PURCHASE.*?([\w\s]+?)(?=\s+\d|\s*-\$)/i,
+                    /(TJ\s*MAXX|WALMART|TARGET|COSTCO|AMAZON|STARBUCKS|MCDONALDS|KINDLE)/i,
+                    /DES:([A-Z\s]+?)(?=\s+ID:|$)/i,
+                    /SANTANDER\s+DES:([A-Z\s]+?)(?=\s+ID:|$)/i
+                ];
+
+                for (let pattern of merchantPatterns) {
+                    const merchantMatch = contextText.match(pattern);
+                    if (merchantMatch) {
+                        let merchant = merchantMatch[1] || merchantMatch[0];
+                        merchant = merchant.trim().replace(/\s+/g, ' ');
+                        merchant = merchant.replace(/PURCHASE|MOBILE|CARD|DEBIT|CREDIT|TRANSACTION/gi, '').trim();
+                        if (merchant.length > 2) {
+                            transaction.store = merchant;
+                            transaction.description = merchant;
+                            break;
+                        }
+                    }
+                }
+
+                // If no merchant found, look in context lines
+                if (!transaction.store) {
+                    for (let line of contextLines) {
+                        if (line.match(/^\d/) || line.match(/\$\d/) || line.length < 3) continue;
+                        if (line.match(/TRANSACCIONES|RECIENTES|proceso|Bank|America/i)) continue;
+                        
+                        const capsWords = line.match(/[A-Z]{2,}(?:\s+[A-Z]{2,})*/g);
+                        if (capsWords && capsWords[0].length > 3) {
+                            let merchant = capsWords[0].replace(/PURCHASE|MOBILE|DES:|ID:|SVCS/gi, '').trim();
+                            if (merchant.length > 2) {
+                                transaction.store = merchant;
+                                transaction.description = merchant;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback
+                if (!transaction.description) {
+                    for (let line of contextLines) {
+                        if (line.length > 5 && !line.match(/^[\d\s\$\-,.:]+$/) && !line.match(/TRANSACCIONES|RECIENTES|proceso|Bank/i)) {
+                            transaction.description = line.substring(0, 50);
+                            transaction.store = line.substring(0, 30);
+                            break;
+                        }
+                    }
+                }
+
+                if (transaction.description || transaction.store) {
+                    transactions.push(transaction);
+                }
+            }
+
+            console.log('Parsed transactions:', transactions);
+            return transactions.length > 0 ? transactions : null;
+        }
+
+        function findMerchantCategory(merchantName) {
+            const lowerMerchant = merchantName.toLowerCase();
+            
+            // Check exact match first
+            if (merchantDatabase[lowerMerchant]) {
+                return merchantDatabase[lowerMerchant];
+            }
+
+            // Check partial matches
+            for (let [merchant, category] of Object.entries(merchantDatabase)) {
+                if (lowerMerchant.includes(merchant) || merchant.includes(lowerMerchant)) {
+                    return category;
+                }
+            }
+
+            return null;
+        }
+
+        function showMerchantLearningMessage(merchant, category, wasMatched) {
+            const messageDiv = document.getElementById('merchant-learning-message');
+            if (wasMatched) {
+                messageDiv.innerHTML = `
+                    <div class="merchant-learning">
+                        ✅ <strong>${merchant}</strong> recognized as <strong>${category}</strong>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="merchant-learning">
+                        🆕 New merchant detected: <strong>${merchant}</strong>. Please select a category - I'll remember it for next time!
+                    </div>
+                `;
+            }
+            
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 8000);
+        }
+
+        function saveMerchantToDatabase(merchant, category) {
+            const lowerMerchant = merchant.toLowerCase();
+            merchantDatabase[lowerMerchant] = category;
+            localStorage.setItem('merchantDatabase', JSON.stringify(merchantDatabase));
+        }
+
+        // Type button selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeButtons = document.querySelectorAll('.type-btn');
+            
+            typeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active from all buttons
+                    typeButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active to clicked button
+                    this.classList.add('active');
+                    // Update selected type
+                    selectedType = this.dataset.type;
+                });
+            });
+
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            
+            // No default selection - user must choose
+            
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active from all buttons
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active to clicked button
+                    this.classList.add('active');
+                    // Update selected category
+                    selectedCategory = this.dataset.category;
+                });
+            });
+
+            // Checking type buttons
+            const checkingTypeButtons = document.querySelectorAll('#checking-type-in, #checking-type-out');
+            
+            checkingTypeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    checkingTypeButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedCheckingType = this.dataset.type;
+                });
+            });
+        });
+
+        // Month navigation
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            updateDisplay();
+        }
+
+        function updateMonthDisplay() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('current-month').textContent = 
+                `${monthNames[currentMonth]} ${currentYear}`;
+        }
+
+        // Calculate spending by category for current month
+        function getMonthlySpending() {
+            const spending = {};
+            const deposits = {};
+            
+            categoryList.forEach(category => {
+                spending[category] = 0;
+                deposits[category] = 0;
+            });
+
+            transactions.forEach(transaction => {
+                // Parse date as local time to avoid timezone issues
+                const dateParts = transaction.date.split('-');
+                const transactionDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                if (transactionDate.getMonth() === currentMonth && 
+                    transactionDate.getFullYear() === currentYear) {
+                    if (transaction.type === 'deposit') {
+                        deposits[transaction.category] = (deposits[transaction.category] || 0) + transaction.amount;
+                    } else {
+                        spending[transaction.category] = (spending[transaction.category] || 0) + transaction.amount;
+                    }
+                }
+            });
+
+            return { spending, deposits };
+        }
+
+        // Get monthly paycheck info (for budget calculations in Expenses tab)
+        function getMonthlyPaychecks() {
+            let totalPaychecks = 0;
+            let paycheckCount = 0;
+            
+            transactions.forEach(transaction => {
+                // Parse date as local time to avoid timezone issues
+                const dateParts = transaction.date.split('-');
+                const transactionDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                if (transactionDate.getMonth() === currentMonth && 
+                    transactionDate.getFullYear() === currentYear &&
+                    transaction.category === 'Paycheck') {
+                    totalPaychecks += transaction.amount;
+                    paycheckCount++;
+                }
+            });
+            
+            // If only 1 paycheck, estimate monthly income by doubling it
+            let estimatedIncome = totalPaychecks;
+            let isEstimated = false;
+            
+            if (paycheckCount === 1) {
+                estimatedIncome = totalPaychecks * 2;
+                isEstimated = true;
+            }
+            
+            return {
+                actual: totalPaychecks,
+                estimated: estimatedIncome,
+                count: paycheckCount,
+                isEstimated: isEstimated
+            };
+        }
+
+        // Calculate dynamic Free Money budget based on paychecks
+        function calculateDynamicBudgets() {
+            const paycheckInfo = getMonthlyPaychecks();
+            const income = paycheckInfo.estimated;
+            
+            // Sum of fixed category budgets (excluding Paycheck and Free Money)
+            let fixedBudgets = 0;
+            categoryList.forEach(category => {
+                if (category !== 'Paycheck' && category !== 'Free Money') {
+                    fixedBudgets += budgets[category];
+                }
+            });
+            
+            // Free Money gets the remainder
+            const dynamicFreeMoney = income - fixedBudgets;
+            
+            return {
+                income: income,
+                fixedBudgets: fixedBudgets,
+                freeMoneyBudget: dynamicFreeMoney,
+                paycheckInfo: paycheckInfo
+            };
+        }
+
+        // Update budget overview
+        function updateBudgetOverview() {
+            const { spending, deposits } = getMonthlySpending();
+            const dynamicBudgets = calculateDynamicBudgets();
+            const overview = document.getElementById('budget-overview');
+            
+            let totalBudget = 0;
+            let totalSpent = 0;
+            let totalIncome = dynamicBudgets.paycheckInfo.actual;
+            let html = '';
+
+            categoryList.forEach(category => {
+                // Handle Paycheck as income
+                if (category === 'Paycheck') {
+                    const paycheckTotal = spending[category] || 0;
+                    const paycheckInfo = dynamicBudgets.paycheckInfo;
+                    
+                    let statusText = '';
+                    if (paycheckInfo.count === 0) {
+                        statusText = 'No paychecks added yet';
+                    } else if (paycheckInfo.isEstimated) {
+                        statusText = `1 paycheck received - Budget estimated at $${paycheckInfo.estimated.toFixed(2)}`;
+                    } else {
+                        statusText = `${paycheckInfo.count} paychecks received - Actual total`;
+                    }
+                    
+                    html += `
+                        <div class="budget-item">
+                            <div class="budget-header">
+                                <div class="budget-category">💰 ${category}</div>
+                                <div class="budget-amounts">
+                                    <span style="color: #4caf50; font-weight: 600;">+$${paycheckTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 5px; font-size: 12px; color: #4caf50; font-weight: 600;">
+                                ${statusText} ${paycheckInfo.isEstimated ? '⚠️' : '✓'}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Handle Free Money with dynamic budget
+                if (category === 'Free Money') {
+                    const spent = spending[category] || 0;
+                    const dynamicBudget = dynamicBudgets.freeMoneyBudget;
+                    const remaining = dynamicBudget - spent;
+                    const percentage = dynamicBudget > 0 ? Math.min((spent / dynamicBudget) * 100, 100) : 0;
+                    
+                    totalBudget += dynamicBudget;
+                    totalSpent += spent;
+
+                    let progressClass = 'low';
+                    if (percentage >= 100) progressClass = 'over';
+                    else if (percentage >= 80) progressClass = 'high';
+                    else if (percentage >= 60) progressClass = 'medium';
+
+                    html += `
+                        <div class="budget-item">
+                            <div class="budget-header">
+                                <div class="budget-category">${category} ${dynamicBudgets.paycheckInfo.isEstimated ? '(estimated)' : ''}</div>
+                                <div class="budget-amounts">
+                                    <span class="spent">$${spent.toFixed(2)}</span>
+                                    <span class="budget-limit">/ $${dynamicBudget.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${progressClass}" style="width: ${Math.max(0, percentage)}%">
+                                    ${percentage >= 100 ? percentage.toFixed(0) + '%' : ''}
+                                </div>
+                            </div>
+                            <div style="margin-top: 5px; font-size: 12px; color: ${remaining >= 0 ? '#4caf50' : '#f44336'}; font-weight: 600;">
+                                ${remaining >= 0 ? 'Remaining:' : 'Over budget:'} $${Math.abs(remaining).toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Handle other categories with fixed budgets
+                const baseBudget = budgets[category];
+                const deposit = deposits[category] || 0;
+                const effectiveBudget = baseBudget + deposit;
+                const spent = spending[category] || 0;
+                const remaining = effectiveBudget - spent;
+                const percentage = effectiveBudget > 0 ? Math.min((spent / effectiveBudget) * 100, 100) : 0;
+                
+                totalBudget += effectiveBudget;
+                totalSpent += spent;
+
+                let progressClass = 'low';
+                if (percentage >= 100) progressClass = 'over';
+                else if (percentage >= 80) progressClass = 'high';
+                else if (percentage >= 60) progressClass = 'medium';
+
+                html += `
+                    <div class="budget-item">
+                        <div class="budget-header">
+                            <div class="budget-category">${category}</div>
+                            <div class="budget-amounts">
+                                <span class="spent">$${spent.toFixed(2)}</span>
+                                <span class="budget-limit">/ $${effectiveBudget.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressClass}" style="width: ${percentage}%">
+                                ${percentage >= 100 ? percentage.toFixed(0) + '%' : ''}
+                            </div>
+                        </div>
+                        <div style="margin-top: 5px; font-size: 12px; color: ${remaining >= 0 ? '#4caf50' : '#f44336'}; font-weight: 600;">
+                            ${remaining >= 0 ? 'Remaining:' : 'Over budget:'} $${Math.abs(remaining).toFixed(2)}
+                            ${deposit > 0 ? `<span style="color: #666; font-weight: 400;"> (includes +$${deposit.toFixed(2)} deposit)</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            overview.innerHTML = html;
+
+            // Update summary
+            const totalRemaining = totalBudget - totalSpent;
+            document.getElementById('total-remaining').textContent = `$${totalRemaining.toFixed(2)}`;
+            
+            const budgetStatus = dynamicBudgets.paycheckInfo.isEstimated ? ' (estimated)' : '';
+            document.getElementById('budget-summary').textContent = 
+                `Income: $${totalIncome.toFixed(2)} | Spent: $${totalSpent.toFixed(2)} of $${totalBudget.toFixed(2)} budget${budgetStatus}`;
+        }
+
+        // Filter transactions by category
+        function filterCategory(category) {
+            currentFilter = category;
+            
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateTransactionList();
+        }
+
+        // Update transaction list
+        function updateTransactionList() {
+            const list = document.getElementById('transaction-list');
+            
+            // Filter transactions for current month
+            const monthTransactions = transactions.filter(t => {
+                // Parse date as local time to avoid timezone issues
+                const dateParts = t.date.split('-');
+                const tDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const matchesMonth = tDate.getMonth() === currentMonth && 
+                                    tDate.getFullYear() === currentYear;
+                const matchesFilter = currentFilter === 'all' || t.category === currentFilter;
+                return matchesMonth && matchesFilter;
+            });
+
+            if (monthTransactions.length === 0) {
+                list.innerHTML = '<div class="empty-state">No transactions yet</div>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            monthTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            list.innerHTML = monthTransactions.map(t => {
+                // Fix timezone issue - parse date as local time
+                const dateParts = t.date.split('-');
+                const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const dateString = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                // Paycheck is always income, other categories can be expense or deposit
+                const isPaycheck = t.category === 'Paycheck';
+                const isDeposit = t.type === 'deposit' || isPaycheck;
+                const amountSign = isDeposit ? '+' : '-';
+                const amountClass = isDeposit ? 'deposit' : 'expense';
+
+                return `
+                    <div class="transaction">
+                        <div class="transaction-header">
+                            <div class="transaction-description">${t.description}</div>
+                            <div class="transaction-amount ${amountClass}">${amountSign}$${t.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-details">
+                            <span class="transaction-store">${t.store}</span>
+                            <span>•</span>
+                            <span>${t.category}</span>
+                            <span>•</span>
+                            <span>${dateString}</span>
+                            ${isPaycheck ? '<span>•</span><span style="color: #4caf50; font-weight: 600;">Income</span>' : ''}
+                            ${isDeposit && !isPaycheck ? '<span>•</span><span style="color: #4caf50; font-weight: 600;">Deposit</span>' : ''}
+                        </div>
+                        <button class="edit-btn" onclick="editTransaction(${t.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteTransaction(${t.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add or update transaction
+        function addTransaction() {
+            const description = document.getElementById('description').value.trim();
+            const store = document.getElementById('store').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const date = document.getElementById('date').value;
+            const category = selectedCategory;
+            const type = selectedType;
+
+            if (!description || !store || !amount || amount <= 0 || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (!category) {
+                alert('Please select a category');
+                return;
+            }
+
+            if (editingTransactionId) {
+                // Update existing transaction
+                const index = transactions.findIndex(t => t.id === editingTransactionId);
+                if (index !== -1) {
+                    transactions[index] = {
+                        id: editingTransactionId,
+                        description,
+                        store,
+                        amount,
+                        date,
+                        category,
+                        type
+                    };
+                }
+                editingTransactionId = null;
+                document.getElementById('submit-btn').textContent = 'Add Transaction';
+            } else {
+                // Add new transaction
+                const transaction = {
+                    id: Date.now(),
+                    description,
+                    store,
+                    amount,
+                    date,
+                    category,
+                    type
+                };
+                transactions.push(transaction);
+            }
+
+            // Save merchant to learning database
+            if (store && category) {
+                saveMerchantToDatabase(store, category);
+            }
+
+            saveData();
+
+            // Clear inputs and reset
+            document.getElementById('description').value = '';
+            document.getElementById('store').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // Reset type to expense - find the expense button in the expenses tab specifically
+            const expenseTabTypeBtns = document.querySelector('#expenses-view .type-buttons').querySelectorAll('.type-btn');
+            expenseTabTypeBtns.forEach(btn => btn.classList.remove('active'));
+            expenseTabTypeBtns.forEach(btn => {
+                if (btn.dataset.type === 'expense') {
+                    btn.classList.add('active');
+                }
+            });
+            selectedType = 'expense';
+            
+            // Reset category to none
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            selectedCategory = null;
+
+            // Clear merchant learning message
+            document.getElementById('merchant-learning-message').innerHTML = '';
+
+            updateDisplay();
+            updateCheckingDisplay(); // Refresh the monthly budget dropdown
+
+            // If there are remaining transactions from OCR, show selector again
+            if (window.hasRemainingTransactions && window.tempTransactions && window.tempTransactions.length > 0) {
+                setTimeout(() => {
+                    showTransactionSelector(window.tempTransactions);
+                }, 500); // Small delay for better UX
+            } else {
+                // Clean up
+                window.hasRemainingTransactions = false;
+                window.tempTransactions = null;
+            }
+        }
+
+        // Edit transaction
+        function editTransaction(id) {
+            const transaction = transactions.find(t => t.id === id);
+            if (!transaction) return;
+
+            // Populate form with transaction data
+            document.getElementById('description').value = transaction.description;
+            document.getElementById('store').value = transaction.store;
+            document.getElementById('amount').value = transaction.amount;
+            document.getElementById('date').value = transaction.date;
+            
+            // Set active type button
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === (transaction.type || 'expense')) {
+                    btn.classList.add('active');
+                }
+            });
+            selectedType = transaction.type || 'expense';
+            
+            // Set active category button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.category === transaction.category) {
+                    btn.classList.add('active');
+                }
+            });
+            selectedCategory = transaction.category;
+
+            // Update button text and track editing
+            editingTransactionId = id;
+            document.getElementById('submit-btn').textContent = 'Update Transaction';
+
+            // Scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Delete transaction
+        function deleteTransaction(id) {
+            if (confirm('Delete this transaction?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+                updateDisplay();
+                updateCheckingDisplay(); // Refresh the monthly budget dropdown
+            }
+        }
+
+        // Budget modal functions
+        function openBudgetModal() {
+            updateBudgetBreakdownInModal();
+            document.getElementById('budget-modal').classList.add('active');
+        }
+
+        function closeBudgetModal() {
+            document.getElementById('budget-modal').classList.remove('active');
+        }
+
+        function updateBudgetBreakdownInModal() {
+            const container = document.getElementById('budget-breakdown-in-modal');
+            
+            let html = '';
+            categoryList.forEach(category => {
+                const items = budgetBreakdown[category] || [];
+                const total = items.reduce((sum, item) => sum + item.amount, 0);
+                const isPaycheck = category === 'Paycheck';
+                
+                html += `
+                    <div class="breakdown-category">
+                        <div class="breakdown-header">
+                            <div class="breakdown-category-name">${isPaycheck ? '💰 ' : ''}${category}</div>
+                            <div class="breakdown-total" style="color: ${isPaycheck ? '#4caf50' : '#667eea'};">
+                                ${isPaycheck ? '+' : ''}$${total.toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="breakdown-items">
+                            ${items.map(item => `
+                                <div class="breakdown-item">
+                                    <span class="breakdown-item-name">${item.name}</span>
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="breakdown-item-amount" style="color: ${isPaycheck ? '#4caf50' : '#333'};">
+                                            ${isPaycheck ? '+' : ''}$${item.amount.toFixed(2)}
+                                        </span>
+                                        <button class="breakdown-delete-btn" onclick="deleteBudgetItem('${category}', ${item.id})">Delete</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="breakdown-add-btn" onclick="openBudgetItemModal('${category}')">+ Add Item</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function saveBudgets() {
+            // This function is no longer needed - budgets are saved when items are added/deleted
+            // But keeping it to avoid breaking existing code
+            closeBudgetModal();
+            updateDisplay();
+        }
+
+        function openBudgetItemModal(category) {
+            currentBudgetCategory = category;
+            document.getElementById('budget-item-modal-title').textContent = `Add Item to ${category}`;
+            document.getElementById('budget-item-name').value = '';
+            document.getElementById('budget-item-amount').value = '';
+            document.getElementById('budget-item-modal').classList.add('active');
+        }
+
+        function closeBudgetItemModal() {
+            document.getElementById('budget-item-modal').classList.remove('active');
+            currentBudgetCategory = null;
+        }
+
+        function saveBudgetItem() {
+            const name = document.getElementById('budget-item-name').value.trim();
+            const amount = parseFloat(document.getElementById('budget-item-amount').value);
+            
+            if (!name || !amount || amount <= 0) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (!currentBudgetCategory) {
+                alert('No category selected');
+                return;
+            }
+            
+            // Add item to breakdown
+            const item = {
+                id: Date.now(),
+                name: name,
+                amount: amount
+            };
+            
+            if (!budgetBreakdown[currentBudgetCategory]) {
+                budgetBreakdown[currentBudgetCategory] = [];
+            }
+            
+            budgetBreakdown[currentBudgetCategory].push(item);
+            
+            // Update budget total for this category
+            const categoryTotal = budgetBreakdown[currentBudgetCategory].reduce((sum, i) => sum + i.amount, 0);
+            budgets[currentBudgetCategory] = categoryTotal;
+            
+            // Save to localStorage
+            localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
+            localStorage.setItem('budgets', JSON.stringify(budgets));
+            
+            // Update displays
+            updateBudgetBreakdownInModal();
+            updateBudgetOverview();
+            
+            // Close modal
+            closeBudgetItemModal();
+        }
+
+        function deleteBudgetItem(category, itemId) {
+            if (!confirm('Delete this item?')) return;
+            
+            budgetBreakdown[category] = budgetBreakdown[category].filter(item => item.id !== itemId);
+            
+            // Update budget total for this category
+            const categoryTotal = budgetBreakdown[category].reduce((sum, i) => sum + i.amount, 0);
+            budgets[category] = categoryTotal;
+            
+            // Save to localStorage
+            localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
+            localStorage.setItem('budgets', JSON.stringify(budgets));
+            
+            // Update displays
+            updateBudgetBreakdownInModal();
+            updateBudgetOverview();
+        }
+
+        // Save data
+        function saveData() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        // Update all displays
+        function updateDisplay() {
+            updateMonthDisplay();
+            updateBudgetOverview();
+            updateTransactionList();
+        }
+
+        // ============ FREE MONEY FUNCTIONS ============
+
+        // Setup Free Money type buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const freeTypeButtons = document.querySelectorAll('#free-type-in, #free-type-out');
+            
+            freeTypeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    freeTypeButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedFreeMoneyType = this.dataset.type;
+                });
+            });
+        });
+
+        // Calculate Free Money balance
+        function calculateFreeMoneyBalance() {
+            let totalIn = 0;
+            let totalOut = 0;
+            
+            freeMoneyTransactions.forEach(transaction => {
+                if (transaction.type === 'in') {
+                    totalIn += transaction.amount;
+                } else {
+                    totalOut += transaction.amount;
+                }
+            });
+            
+            return {
+                balance: totalIn - totalOut,
+                totalIn: totalIn,
+                totalOut: totalOut
+            };
+        }
+
+        // Update Free Money display
+        function updateFreeMoneyDisplay() {
+            const stats = calculateFreeMoneyBalance();
+            
+            document.getElementById('free-money-balance').textContent = `$${stats.balance.toFixed(2)}`;
+            document.getElementById('free-money-in').textContent = `$${stats.totalIn.toFixed(2)}`;
+            document.getElementById('free-money-out').textContent = `$${stats.totalOut.toFixed(2)}`;
+            
+            updateFreeMoneyList();
+        }
+
+        // Update Free Money transaction list
+        function updateFreeMoneyList() {
+            const list = document.getElementById('free-money-list');
+            
+            if (freeMoneyTransactions.length === 0) {
+                list.innerHTML = '<div class="empty-state">No transactions yet</div>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sorted = [...freeMoneyTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            list.innerHTML = sorted.map(t => {
+                const dateParts = t.date.split('-');
+                const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const dateString = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                const isMoneyIn = t.type === 'in';
+                const amountSign = isMoneyIn ? '+' : '-';
+                const amountClass = isMoneyIn ? 'deposit' : 'expense';
+
+                return `
+                    <div class="transaction">
+                        <div class="transaction-header">
+                            <div class="transaction-description">${t.description}</div>
+                            <div class="transaction-amount ${amountClass}">${amountSign}$${t.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-details">
+                            <span>${dateString}</span>
+                            <span>•</span>
+                            <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
+                        </div>
+                        <button class="edit-btn" onclick="editFreeMoneyTransaction(${t.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteFreeMoneyTransaction(${t.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add or update Free Money transaction
+        function addFreeMoneyTransaction() {
+            const description = document.getElementById('free-description').value.trim();
+            const amount = parseFloat(document.getElementById('free-amount').value);
+            const date = document.getElementById('free-date').value;
+            const type = selectedFreeMoneyType;
+
+            if (!description || !amount || amount <= 0 || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (editingFreeMoneyId) {
+                // Update existing transaction
+                const index = freeMoneyTransactions.findIndex(t => t.id === editingFreeMoneyId);
+                if (index !== -1) {
+                    freeMoneyTransactions[index] = {
+                        id: editingFreeMoneyId,
+                        description,
+                        amount,
+                        date,
+                        type
+                    };
+                }
+                editingFreeMoneyId = null;
+                document.getElementById('free-submit-btn').textContent = 'Add Transaction';
+            } else {
+                // Add new transaction
+                const transaction = {
+                    id: Date.now(),
+                    description,
+                    amount,
+                    date,
+                    type
+                };
+                freeMoneyTransactions.push(transaction);
+            }
+
+            saveFreeMoneyData();
+
+            // Clear inputs
+            document.getElementById('free-description').value = '';
+            document.getElementById('free-amount').value = '';
+            document.getElementById('free-date').valueAsDate = new Date();
+            
+            // Reset type to "in"
+            document.querySelectorAll('#free-type-in, #free-type-out').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('free-type-in').classList.add('active');
+            selectedFreeMoneyType = 'in';
+
+            updateFreeMoneyDisplay();
+        }
+
+        // Edit Free Money transaction
+        function editFreeMoneyTransaction(id) {
+            const transaction = freeMoneyTransactions.find(t => t.id === id);
+            if (!transaction) return;
+
+            document.getElementById('free-description').value = transaction.description;
+            document.getElementById('free-amount').value = transaction.amount;
+            document.getElementById('free-date').value = transaction.date;
+            
+            // Set active type button
+            document.querySelectorAll('#free-type-in, #free-type-out').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === transaction.type) {
+                    btn.classList.add('active');
+                }
+            });
+            selectedFreeMoneyType = transaction.type;
+
+            editingFreeMoneyId = id;
+            document.getElementById('free-submit-btn').textContent = 'Update Transaction';
+
+            // Scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Delete Free Money transaction
+        function deleteFreeMoneyTransaction(id) {
+            if (confirm('Delete this transaction?')) {
+                freeMoneyTransactions = freeMoneyTransactions.filter(t => t.id !== id);
+                saveFreeMoneyData();
+                updateFreeMoneyDisplay();
+            }
+        }
+
+        // Save Free Money data
+        function saveFreeMoneyData() {
+            localStorage.setItem('freeMoneyTransactions', JSON.stringify(freeMoneyTransactions));
+        }
+
+        // ============ FONDO FUNCTIONS ============
+
+        // Setup Wedding type buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const weddingTypeButtons = document.querySelectorAll('#wedding-type-in, #wedding-type-out');
+            
+            weddingTypeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    weddingTypeButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedWeddingType = this.dataset.type;
+                });
+            });
+        });
+
+        // Calculate Wedding balance
+        function calculateWeddingBalance() {
+            let totalIn = 0;
+            let totalOut = 0;
+            
+            weddingTransactions.forEach(transaction => {
+                if (transaction.type === 'in') {
+                    totalIn += transaction.amount;
+                } else {
+                    totalOut += transaction.amount;
+                }
+            });
+            
+            return {
+                balance: totalIn - totalOut,
+                totalIn: totalIn,
+                totalOut: totalOut
+            };
+        }
+
+        // Update Wedding display
+        function updateWeddingDisplay() {
+            const stats = calculateWeddingBalance();
+            
+            document.getElementById('wedding-balance').textContent = `$${stats.balance.toFixed(2)}`;
+            document.getElementById('wedding-in').textContent = `$${stats.totalIn.toFixed(2)}`;
+            document.getElementById('wedding-out').textContent = `$${stats.totalOut.toFixed(2)}`;
+            
+            updateWeddingList();
+        }
+
+        // Update Wedding transaction list
+        function updateWeddingList() {
+            const list = document.getElementById('wedding-list');
+            
+            if (weddingTransactions.length === 0) {
+                list.innerHTML = '<div class="empty-state">No transactions yet</div>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sorted = [...weddingTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            list.innerHTML = sorted.map(t => {
+                const dateParts = t.date.split('-');
+                const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const dateString = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                const isMoneyIn = t.type === 'in';
+                const amountSign = isMoneyIn ? '+' : '-';
+                const amountClass = isMoneyIn ? 'deposit' : 'expense';
+
+                return `
+                    <div class="transaction">
+                        <div class="transaction-header">
+                            <div class="transaction-description">${t.description}</div>
+                            <div class="transaction-amount ${amountClass}">${amountSign}$${t.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-details">
+                            <span>${dateString}</span>
+                            <span>•</span>
+                            <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
+                        </div>
+                        <button class="edit-btn" onclick="editWeddingTransaction(${t.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteWeddingTransaction(${t.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add or update Wedding transaction
+        function addWeddingTransaction() {
+            const description = document.getElementById('wedding-description').value.trim();
+            const amount = parseFloat(document.getElementById('wedding-amount').value);
+            const date = document.getElementById('wedding-date').value;
+            const type = selectedWeddingType;
+
+            if (!description || !amount || amount <= 0 || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (editingWeddingId) {
+                // Update existing transaction
+                const index = weddingTransactions.findIndex(t => t.id === editingWeddingId);
+                if (index !== -1) {
+                    weddingTransactions[index] = {
+                        id: editingWeddingId,
+                        description,
+                        amount,
+                        date,
+                        type
+                    };
+                }
+                editingWeddingId = null;
+                document.getElementById('wedding-submit-btn').textContent = 'Add Transaction';
+            } else {
+                // Add new transaction
+                const transaction = {
+                    id: Date.now(),
+                    description,
+                    amount,
+                    date,
+                    type
+                };
+                weddingTransactions.push(transaction);
+            }
+
+            saveWeddingData();
+
+            // Clear inputs
+            document.getElementById('wedding-description').value = '';
+            document.getElementById('wedding-amount').value = '';
+            document.getElementById('wedding-date').valueAsDate = new Date();
+            
+            // Reset type to "in"
+            document.querySelectorAll('#wedding-type-in, #wedding-type-out').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('wedding-type-in').classList.add('active');
+            selectedWeddingType = 'in';
+
+            updateWeddingDisplay();
+        }
+
+        // Edit Wedding transaction
+        function editWeddingTransaction(id) {
+            const transaction = weddingTransactions.find(t => t.id === id);
+            if (!transaction) return;
+
+            document.getElementById('wedding-description').value = transaction.description;
+            document.getElementById('wedding-amount').value = transaction.amount;
+            document.getElementById('wedding-date').value = transaction.date;
+            
+            // Set active type button
+            document.querySelectorAll('#wedding-type-in, #wedding-type-out').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === transaction.type) {
+                    btn.classList.add('active');
+                }
+            });
+            selectedWeddingType = transaction.type;
+
+            editingWeddingId = id;
+            document.getElementById('wedding-submit-btn').textContent = 'Update Transaction';
+
+            // Scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Delete Wedding transaction
+        function deleteWeddingTransaction(id) {
+            if (confirm('Delete this transaction?')) {
+                weddingTransactions = weddingTransactions.filter(t => t.id !== id);
+                saveWeddingData();
+                updateWeddingDisplay();
+            }
+        }
+
+        // Save Wedding data
+        function saveWeddingData() {
+            localStorage.setItem('weddingTransactions', JSON.stringify(weddingTransactions));
+        }
+
+        // ============ CHECKING ACCOUNT FUNCTIONS ============
+
+        // Calculate Checking balance
+        function calculateCheckingBalance() {
+            let totalIn = 0;
+            let totalOut = 0;
+            
+            checkingTransactions.forEach(transaction => {
+                if (transaction.type === 'in') {
+                    totalIn += transaction.amount;
+                } else {
+                    totalOut += transaction.amount;
+                }
+            });
+            
+            return {
+                balance: checkingStartingBalance + totalIn - totalOut,
+                totalIn: totalIn,
+                totalOut: totalOut,
+                starting: checkingStartingBalance
+            };
+        }
+
+        // Update Checking display
+        function updateCheckingDisplay() {
+            // Calculate Emergency Fund balance
+            const emergencyStats = calculateCheckingBalance();
+            
+            // Get Free Money and Wedding balances
+            const freeMoneyStats = calculateFreeMoneyBalance();
+            const weddingStats = calculateWeddingBalance();
+            
+            // Populate monthly budget selector only if empty (first time)
+            const selector = document.getElementById('monthly-budget-selector');
+            if (!selector || selector.options.length === 0) {
+                populateMonthlyBudgetSelector();
+            }
+            
+            // Update monthly budget display (this will also update the total balance)
+            updateMonthlyBudgetDisplay();
+            
+            // Update individual account displays
+            document.getElementById('checking-emergency-balance').textContent = `$${emergencyStats.balance.toFixed(2)}`;
+            document.getElementById('checking-free-money-balance').textContent = `$${freeMoneyStats.balance.toFixed(2)}`;
+            document.getElementById('checking-wedding-balance').textContent = `$${weddingStats.balance.toFixed(2)}`;
+            
+            updateCheckingList();
+        }
+
+        // Populate the monthly budget dropdown with all 12 months
+        function populateMonthlyBudgetSelector() {
+            const selector = document.getElementById('monthly-budget-selector');
+            
+            // Get current date
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-11
+            
+            // Generate all 12 months for current year
+            const months = [];
+            for (let i = 0; i < 12; i++) {
+                const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+                months.push(monthKey);
+            }
+            
+            // Clear and populate selector
+            selector.innerHTML = months.map(monthKey => {
+                const [year, month] = monthKey.split('-');
+                const date = new Date(year, month - 1, 1);
+                const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                return `<option value="${monthKey}">${monthName}</option>`;
+            }).join('');
+            
+            // Set the current month as selected
+            const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            selector.value = currentMonthKey;
+        }
+
+        // Calculate monthly budget balance for selected month
+        function calculateMonthlyBudgetBalance() {
+            const selector = document.getElementById('monthly-budget-selector');
+            
+            // Return zero if selector doesn't exist yet
+            if (!selector) {
+                return { balance: 0, totalIn: 0, totalOut: 0 };
+            }
+            
+            const selectedMonth = selector.value;
+            
+            if (!selectedMonth) {
+                return { balance: 0, totalIn: 0, totalOut: 0 };
+            }
+            
+            const [year, month] = selectedMonth.split('-');
+            
+            let totalIn = 0;
+            let totalOut = 0;
+            
+            transactions.forEach(t => {
+                // Parse date as local time to avoid timezone issues
+                const dateParts = t.date.split('-');
+                const transDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const transYear = transDate.getFullYear();
+                const transMonth = transDate.getMonth() + 1;
+                
+                if (transYear === parseInt(year) && transMonth === parseInt(month)) {
+                    if (t.type === 'deposit') {
+                        totalIn += t.amount;
+                    } else {
+                        totalOut += t.amount;
+                    }
+                }
+            });
+            
+            return {
+                balance: totalIn - totalOut,
+                totalIn: totalIn,
+                totalOut: totalOut
+            };
+        }
+
+        // Store the current monthly budget balance
+        let currentMonthlyBudgetBalance = 0;
+
+        // Update the monthly budget balance display
+        function updateMonthlyBudgetDisplay() {
+            const stats = calculateMonthlyBudgetBalance();
+            currentMonthlyBudgetBalance = stats.balance; // Store it globally
+            const balanceElement = document.getElementById('checking-monthly-balance');
+            
+            if (balanceElement) {
+                balanceElement.textContent = `$${stats.balance.toFixed(2)}`;
+                
+                // Update color based on positive/negative balance
+                if (stats.balance >= 0) {
+                    balanceElement.style.color = '#9c27b0';
+                } else {
+                    balanceElement.style.color = '#f44336';
+                }
+            }
+            
+            // Update the total balance whenever monthly budget changes
+            updateTotalBalance();
+        }
+
+        // Update just the total balance
+        function updateTotalBalance() {
+            const emergencyStats = calculateCheckingBalance();
+            const freeMoneyStats = calculateFreeMoneyBalance();
+            const weddingStats = calculateWeddingBalance();
+            
+            const totalBalance = emergencyStats.balance + freeMoneyStats.balance + weddingStats.balance + currentMonthlyBudgetBalance;
+            
+            document.getElementById('checking-total-balance').textContent = `$${totalBalance.toFixed(2)}`;
+        }
+
+        // Update Checking transaction list
+        function updateCheckingList() {
+            const list = document.getElementById('checking-transaction-list');
+            
+            if (checkingTransactions.length === 0) {
+                list.innerHTML = '<div class="empty-state">No transactions yet</div>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sorted = [...checkingTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            list.innerHTML = sorted.map(t => {
+                const dateParts = t.date.split('-');
+                const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                const dateString = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                const isMoneyIn = t.type === 'in';
+                const amountSign = isMoneyIn ? '+' : '-';
+                const amountClass = isMoneyIn ? 'deposit' : 'expense';
+
+                return `
+                    <div class="transaction">
+                        <div class="transaction-header">
+                            <div class="transaction-description">${t.description}</div>
+                            <div class="transaction-amount ${amountClass}">${amountSign}$${t.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-details">
+                            <span>${dateString}</span>
+                            <span>•</span>
+                            <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
+                        </div>
+                        <button class="edit-btn" onclick="editCheckingTransaction(${t.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteCheckingTransaction(${t.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add or update Checking transaction
+        function addCheckingTransaction() {
+            const description = document.getElementById('checking-description').value.trim();
+            const amount = parseFloat(document.getElementById('checking-amount').value);
+            const date = document.getElementById('checking-date').value;
+            const type = selectedCheckingType;
+
+            if (!description || !amount || amount <= 0 || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (editingCheckingId) {
+                // Update existing transaction
+                const index = checkingTransactions.findIndex(t => t.id === editingCheckingId);
+                if (index !== -1) {
+                    checkingTransactions[index] = {
+                        id: editingCheckingId,
+                        description,
+                        amount,
+                        date,
+                        type
+                    };
+                }
+                editingCheckingId = null;
+                document.getElementById('checking-submit-btn').textContent = 'Add Transaction';
+            } else {
+                // Add new transaction
+                const transaction = {
+                    id: Date.now(),
+                    description,
+                    amount,
+                    date,
+                    type
+                };
+                checkingTransactions.push(transaction);
+            }
+
+            saveCheckingData();
+
+            // Clear inputs
+            document.getElementById('checking-description').value = '';
+            document.getElementById('checking-amount').value = '';
+            document.getElementById('checking-date').valueAsDate = new Date();
+            
+            // Reset type to "out"
+            document.querySelectorAll('#checking-type-in, #checking-type-out').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('checking-type-out').classList.add('active');
+            selectedCheckingType = 'out';
+
+            updateCheckingDisplay();
+        }
+
+        // Edit Checking transaction
+        function editCheckingTransaction(id) {
+            const transaction = checkingTransactions.find(t => t.id === id);
+            if (!transaction) return;
+
+            document.getElementById('checking-description').value = transaction.description;
+            document.getElementById('checking-amount').value = transaction.amount;
+            document.getElementById('checking-date').value = transaction.date;
+            
+            // Set active type button
+            document.querySelectorAll('#checking-type-in, #checking-type-out').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === transaction.type) {
+                    btn.classList.add('active');
+                }
+            });
+            selectedCheckingType = transaction.type;
+
+            editingCheckingId = id;
+            document.getElementById('checking-submit-btn').textContent = 'Update Transaction';
+
+            // Scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Delete Checking transaction
+        function deleteCheckingTransaction(id) {
+            if (confirm('Delete this transaction?')) {
+                checkingTransactions = checkingTransactions.filter(t => t.id !== id);
+                saveCheckingData();
+                updateCheckingDisplay();
+            }
+        }
+
+        // Save Checking data
+        function saveCheckingData() {
+            localStorage.setItem('checkingTransactions', JSON.stringify(checkingTransactions));
+        }
+
+        // Starting balance modal functions
+        function openStartingBalanceModal() {
+            document.getElementById('starting-balance-input').value = checkingStartingBalance;
+            document.getElementById('starting-balance-modal').classList.add('active');
+        }
+
+        function closeStartingBalanceModal() {
+            document.getElementById('starting-balance-modal').classList.remove('active');
+        }
+
+        function saveStartingBalance() {
+            const balance = parseFloat(document.getElementById('starting-balance-input').value) || 0;
+            checkingStartingBalance = balance;
+            localStorage.setItem('checkingStartingBalance', checkingStartingBalance);
+            closeStartingBalanceModal();
+            updateCheckingDisplay();
+        }
+
+        function updateCheckingDashboard() {
+            updateCheckingDisplay();
+        }
+
+        function updateBudgetBreakdown() {
+            // This function is no longer needed but keeping it to avoid errors
+        }
+
+        function updateCheckingRecentActivity() {
+            // This function is no longer needed but keeping it to avoid errors
+        }
+
+        // Make functions globally accessible
+        window.changeMonth = changeMonth;
+        window.filterCategory = filterCategory;
+        window.addTransaction = addTransaction;
+        window.editTransaction = editTransaction;
+        window.deleteTransaction = deleteTransaction;
+        window.openBudgetModal = openBudgetModal;
+        window.closeBudgetModal = closeBudgetModal;
+        window.saveBudgets = saveBudgets;
+        window.selectTransaction = selectTransaction;
+        window.closeTransactionSelector = closeTransactionSelector;
+        window.navigateTo = navigateTo;
+        window.addFreeMoneyTransaction = addFreeMoneyTransaction;
+        window.editFreeMoneyTransaction = editFreeMoneyTransaction;
+        window.deleteFreeMoneyTransaction = deleteFreeMoneyTransaction;
+        window.addWeddingTransaction = addWeddingTransaction;
+        window.editWeddingTransaction = editWeddingTransaction;
+        window.deleteWeddingTransaction = deleteWeddingTransaction;
+        window.addCheckingTransaction = addCheckingTransaction;
+        window.editCheckingTransaction = editCheckingTransaction;
+        window.deleteCheckingTransaction = deleteCheckingTransaction;
+        window.openStartingBalanceModal = openStartingBalanceModal;
+        window.closeStartingBalanceModal = closeStartingBalanceModal;
+        window.saveStartingBalance = saveStartingBalance;
+        window.openBudgetItemModal = openBudgetItemModal;
+        window.closeBudgetItemModal = closeBudgetItemModal;
+        window.saveBudgetItem = saveBudgetItem;
+        window.deleteBudgetItem = deleteBudgetItem;
+        window.updateMonthlyBudgetDisplay = updateMonthlyBudgetDisplay;
+        window.openManageCategoriesModal = openManageCategoriesModal;
+        window.closeManageCategoriesModal = closeManageCategoriesModal;
+        window.addNewCategory = addNewCategory;
+        window.deleteCategory = deleteCategory;
+
+        // Initial load
+        renderCategoryButtons();
+        renderFilterTabs();
+        updateDisplay();
+        updateCheckingDisplay();
+    </script>
+</body>
+</html>

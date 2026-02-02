@@ -1,0 +1,8 @@
+{
+  "name": "budget-tracker",
+  "version": "1.0.0",
+  "description": "Budget tracker with AI-powered transaction reading",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
