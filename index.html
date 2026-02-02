@@ -886,9 +886,9 @@
                     <button onclick="navigateTo('free')" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
                 </div>
                 <div style="background: rgba(255, 152, 0, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Wedding</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #ff9800; margin-bottom: 10px;" id="checking-wedding-balance">$0.00</div>
-                    <button onclick="navigateTo('wedding')" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Fondo</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #ff9800; margin-bottom: 10px;" id="checking-fondo-balance">$0.00</div>
+                    <button onclick="navigateTo('fondo')" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
                 </div>
             </div>
         </div>
@@ -1079,64 +1079,64 @@
         </div>
     </div>
 
-    <!-- Wedding Savings View -->
-    <div class="container content-view" id="wedding-view">
-        <!-- Wedding Balance -->
+    <!-- Fondo Savings View -->
+    <div class="container content-view" id="fondo-view">
+        <!-- Fondo Balance -->
         <div class="section">
-            <div class="section-title">🏛️ Wedding Account</div>
+            <div class="section-title">🏛️ Fondo Account</div>
             
             <div class="summary-total" style="background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);">
                 <div class="summary-label">Current Balance</div>
-                <div class="summary-amount" id="wedding-balance">$0.00</div>
-                <div class="summary-subtitle" id="wedding-summary">Total saved in Wedding</div>
+                <div class="summary-amount" id="fondo-balance">$0.00</div>
+                <div class="summary-subtitle" id="fondo-summary">Total saved in Fondo</div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                 <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total In</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #4caf50;" id="wedding-in">$0.00</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #4caf50;" id="fondo-in">$0.00</div>
                 </div>
                 <div style="background: rgba(244, 67, 54, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Total Out</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #f44336;" id="wedding-out">$0.00</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #f44336;" id="fondo-out">$0.00</div>
                 </div>
             </div>
         </div>
 
-        <!-- Add Wedding Transaction -->
+        <!-- Add Fondo Transaction -->
         <div class="section">
             <div class="section-title">Add Transaction</div>
             
             <div class="input-group">
-                <label for="wedding-description">Description</label>
-                <input type="text" id="wedding-description" placeholder="e.g., Monthly deposit">
+                <label for="fondo-description">Description</label>
+                <input type="text" id="fondo-description" placeholder="e.g., Monthly deposit">
             </div>
 
             <div class="input-group">
-                <label for="wedding-amount">Amount</label>
-                <input type="number" id="wedding-amount" placeholder="0.00" step="0.01">
+                <label for="fondo-amount">Amount</label>
+                <input type="number" id="fondo-amount" placeholder="0.00" step="0.01">
             </div>
 
             <div class="input-group">
-                <label for="wedding-date">Date</label>
-                <input type="date" id="wedding-date">
+                <label for="fondo-date">Date</label>
+                <input type="date" id="fondo-date">
             </div>
 
             <div class="input-group">
                 <label>Type</label>
                 <div class="type-buttons">
-                    <button type="button" class="type-btn active" data-type="in" id="wedding-type-in">Money In</button>
-                    <button type="button" class="type-btn" data-type="out" id="wedding-type-out">Money Out</button>
+                    <button type="button" class="type-btn active" data-type="in" id="fondo-type-in">Money In</button>
+                    <button type="button" class="type-btn" data-type="out" id="fondo-type-out">Money Out</button>
                 </div>
             </div>
 
-            <button class="primary" onclick="addWeddingTransaction()" id="wedding-submit-btn">Add Transaction</button>
+            <button class="primary" onclick="addFondoTransaction()" id="fondo-submit-btn">Add Transaction</button>
         </div>
 
-        <!-- Wedding Transactions -->
+        <!-- Fondo Transactions -->
         <div class="section">
             <div class="section-title">Transaction History</div>
-            <div id="wedding-list"></div>
+            <div id="fondo-list"></div>
         </div>
     </div>
 
@@ -1257,9 +1257,9 @@
             <div class="nav-icon">💸</div>
             <div class="nav-label">Free Money</div>
         </button>
-        <button class="nav-btn" onclick="navigateTo('wedding')">
+        <button class="nav-btn" onclick="navigateTo('fondo')">
             <div class="nav-icon">🏛️</div>
-            <div class="nav-label">Wedding</div>
+            <div class="nav-label">Fondo</div>
         </button>
     </div>
 
@@ -1306,7 +1306,7 @@
 
         let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
         let freeMoneyTransactions = JSON.parse(localStorage.getItem('freeMoneyTransactions')) || [];
-        let weddingTransactions = JSON.parse(localStorage.getItem('weddingTransactions')) || [];
+        let fondoTransactions = JSON.parse(localStorage.getItem('fondoTransactions')) || [];
         let checkingTransactions = JSON.parse(localStorage.getItem('checkingTransactions')) || [];
         let checkingStartingBalance = parseFloat(localStorage.getItem('checkingStartingBalance')) || 0;
         let currentMonth = new Date().getMonth();
@@ -1318,8 +1318,8 @@
         let currentView = 'checking'; // Track current view
         let editingFreeMoneyId = null; // Track if we're editing free money transaction
         let selectedFreeMoneyType = 'in'; // Default type for free money
-        let editingWeddingId = null; // Track if we're editing wedding transaction
-        let selectedWeddingType = 'in'; // Default type for wedding
+        let editingFondoId = null; // Track if we're editing fondo transaction
+        let selectedFondoType = 'in'; // Default type for fondo
 
         // Merchant learning database
         let merchantDatabase = JSON.parse(localStorage.getItem('merchantDatabase')) || {};
@@ -1530,9 +1530,9 @@
             } else if (view === 'free') {
                 document.getElementById('free-money-view').classList.add('active');
                 updateFreeMoneyDisplay();
-            } else if (view === 'wedding') {
-                document.getElementById('wedding-view').classList.add('active');
-                updateWeddingDisplay();
+            } else if (view === 'fondo') {
+                document.getElementById('fondo-view').classList.add('active');
+                updateFondoDisplay();
             }
         }
 
@@ -1543,8 +1543,8 @@
         checkingDateInput.valueAsDate = new Date();
         const freeDateInput = document.getElementById('free-date');
         freeDateInput.valueAsDate = new Date();
-        const weddingDateInput = document.getElementById('wedding-date');
-        weddingDateInput.valueAsDate = new Date();
+        const fondoDateInput = document.getElementById('fondo-date');
+        fondoDateInput.valueAsDate = new Date();
         const imageInput = document.getElementById('image-input');
 
         // Image upload handler
@@ -2742,25 +2742,25 @@
 
         // ============ FONDO FUNCTIONS ============
 
-        // Setup Wedding type buttons
+        // Setup Fondo type buttons
         document.addEventListener('DOMContentLoaded', function() {
-            const weddingTypeButtons = document.querySelectorAll('#wedding-type-in, #wedding-type-out');
+            const fondoTypeButtons = document.querySelectorAll('#fondo-type-in, #fondo-type-out');
             
-            weddingTypeButtons.forEach(button => {
+            fondoTypeButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    weddingTypeButtons.forEach(btn => btn.classList.remove('active'));
+                    fondoTypeButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
-                    selectedWeddingType = this.dataset.type;
+                    selectedFondoType = this.dataset.type;
                 });
             });
         });
 
-        // Calculate Wedding balance
-        function calculateWeddingBalance() {
+        // Calculate Fondo balance
+        function calculateFondoBalance() {
             let totalIn = 0;
             let totalOut = 0;
             
-            weddingTransactions.forEach(transaction => {
+            fondoTransactions.forEach(transaction => {
                 if (transaction.type === 'in') {
                     totalIn += transaction.amount;
                 } else {
@@ -2775,28 +2775,28 @@
             };
         }
 
-        // Update Wedding display
-        function updateWeddingDisplay() {
-            const stats = calculateWeddingBalance();
+        // Update Fondo display
+        function updateFondoDisplay() {
+            const stats = calculateFondoBalance();
             
-            document.getElementById('wedding-balance').textContent = `$${stats.balance.toFixed(2)}`;
-            document.getElementById('wedding-in').textContent = `$${stats.totalIn.toFixed(2)}`;
-            document.getElementById('wedding-out').textContent = `$${stats.totalOut.toFixed(2)}`;
+            document.getElementById('fondo-balance').textContent = `$${stats.balance.toFixed(2)}`;
+            document.getElementById('fondo-in').textContent = `$${stats.totalIn.toFixed(2)}`;
+            document.getElementById('fondo-out').textContent = `$${stats.totalOut.toFixed(2)}`;
             
-            updateWeddingList();
+            updateFondoList();
         }
 
-        // Update Wedding transaction list
-        function updateWeddingList() {
-            const list = document.getElementById('wedding-list');
+        // Update Fondo transaction list
+        function updateFondoList() {
+            const list = document.getElementById('fondo-list');
             
-            if (weddingTransactions.length === 0) {
+            if (fondoTransactions.length === 0) {
                 list.innerHTML = '<div class="empty-state">No transactions yet</div>';
                 return;
             }
 
             // Sort by date (newest first)
-            const sorted = [...weddingTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sorted = [...fondoTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             list.innerHTML = sorted.map(t => {
                 const dateParts = t.date.split('-');
@@ -2822,39 +2822,39 @@
                             <span>•</span>
                             <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
                         </div>
-                        <button class="edit-btn" onclick="editWeddingTransaction(${t.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteWeddingTransaction(${t.id})">Delete</button>
+                        <button class="edit-btn" onclick="editFondoTransaction(${t.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteFondoTransaction(${t.id})">Delete</button>
                     </div>
                 `;
             }).join('');
         }
 
-        // Add or update Wedding transaction
-        function addWeddingTransaction() {
-            const description = document.getElementById('wedding-description').value.trim();
-            const amount = parseFloat(document.getElementById('wedding-amount').value);
-            const date = document.getElementById('wedding-date').value;
-            const type = selectedWeddingType;
+        // Add or update Fondo transaction
+        function addFondoTransaction() {
+            const description = document.getElementById('fondo-description').value.trim();
+            const amount = parseFloat(document.getElementById('fondo-amount').value);
+            const date = document.getElementById('fondo-date').value;
+            const type = selectedFondoType;
 
             if (!description || !amount || amount <= 0 || !date) {
                 alert('Please fill in all fields');
                 return;
             }
 
-            if (editingWeddingId) {
+            if (editingFondoId) {
                 // Update existing transaction
-                const index = weddingTransactions.findIndex(t => t.id === editingWeddingId);
+                const index = fondoTransactions.findIndex(t => t.id === editingFondoId);
                 if (index !== -1) {
-                    weddingTransactions[index] = {
-                        id: editingWeddingId,
+                    fondoTransactions[index] = {
+                        id: editingFondoId,
                         description,
                         amount,
                         date,
                         type
                     };
                 }
-                editingWeddingId = null;
-                document.getElementById('wedding-submit-btn').textContent = 'Add Transaction';
+                editingFondoId = null;
+                document.getElementById('fondo-submit-btn').textContent = 'Add Transaction';
             } else {
                 // Add new transaction
                 const transaction = {
@@ -2864,61 +2864,61 @@
                     date,
                     type
                 };
-                weddingTransactions.push(transaction);
+                fondoTransactions.push(transaction);
             }
 
-            saveWeddingData();
+            saveFondoData();
 
             // Clear inputs
-            document.getElementById('wedding-description').value = '';
-            document.getElementById('wedding-amount').value = '';
-            document.getElementById('wedding-date').valueAsDate = new Date();
+            document.getElementById('fondo-description').value = '';
+            document.getElementById('fondo-amount').value = '';
+            document.getElementById('fondo-date').valueAsDate = new Date();
             
             // Reset type to "in"
-            document.querySelectorAll('#wedding-type-in, #wedding-type-out').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('wedding-type-in').classList.add('active');
-            selectedWeddingType = 'in';
+            document.querySelectorAll('#fondo-type-in, #fondo-type-out').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('fondo-type-in').classList.add('active');
+            selectedFondoType = 'in';
 
-            updateWeddingDisplay();
+            updateFondoDisplay();
         }
 
-        // Edit Wedding transaction
-        function editWeddingTransaction(id) {
-            const transaction = weddingTransactions.find(t => t.id === id);
+        // Edit Fondo transaction
+        function editFondoTransaction(id) {
+            const transaction = fondoTransactions.find(t => t.id === id);
             if (!transaction) return;
 
-            document.getElementById('wedding-description').value = transaction.description;
-            document.getElementById('wedding-amount').value = transaction.amount;
-            document.getElementById('wedding-date').value = transaction.date;
+            document.getElementById('fondo-description').value = transaction.description;
+            document.getElementById('fondo-amount').value = transaction.amount;
+            document.getElementById('fondo-date').value = transaction.date;
             
             // Set active type button
-            document.querySelectorAll('#wedding-type-in, #wedding-type-out').forEach(btn => {
+            document.querySelectorAll('#fondo-type-in, #fondo-type-out').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.type === transaction.type) {
                     btn.classList.add('active');
                 }
             });
-            selectedWeddingType = transaction.type;
+            selectedFondoType = transaction.type;
 
-            editingWeddingId = id;
-            document.getElementById('wedding-submit-btn').textContent = 'Update Transaction';
+            editingFondoId = id;
+            document.getElementById('fondo-submit-btn').textContent = 'Update Transaction';
 
             // Scroll to form
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Delete Wedding transaction
-        function deleteWeddingTransaction(id) {
+        // Delete Fondo transaction
+        function deleteFondoTransaction(id) {
             if (confirm('Delete this transaction?')) {
-                weddingTransactions = weddingTransactions.filter(t => t.id !== id);
-                saveWeddingData();
-                updateWeddingDisplay();
+                fondoTransactions = fondoTransactions.filter(t => t.id !== id);
+                saveFondoData();
+                updateFondoDisplay();
             }
         }
 
-        // Save Wedding data
-        function saveWeddingData() {
-            localStorage.setItem('weddingTransactions', JSON.stringify(weddingTransactions));
+        // Save Fondo data
+        function saveFondoData() {
+            localStorage.setItem('fondoTransactions', JSON.stringify(fondoTransactions));
         }
 
         // ============ CHECKING ACCOUNT FUNCTIONS ============
@@ -2949,9 +2949,9 @@
             // Calculate Emergency Fund balance
             const emergencyStats = calculateCheckingBalance();
             
-            // Get Free Money and Wedding balances
+            // Get Free Money and Fondo balances
             const freeMoneyStats = calculateFreeMoneyBalance();
-            const weddingStats = calculateWeddingBalance();
+            const fondoStats = calculateFondoBalance();
             
             // Populate monthly budget selector only if empty (first time)
             const selector = document.getElementById('monthly-budget-selector');
@@ -2965,7 +2965,7 @@
             // Update individual account displays
             document.getElementById('checking-emergency-balance').textContent = `$${emergencyStats.balance.toFixed(2)}`;
             document.getElementById('checking-free-money-balance').textContent = `$${freeMoneyStats.balance.toFixed(2)}`;
-            document.getElementById('checking-wedding-balance').textContent = `$${weddingStats.balance.toFixed(2)}`;
+            document.getElementById('checking-fondo-balance').textContent = `$${fondoStats.balance.toFixed(2)}`;
             
             updateCheckingList();
         }
@@ -3070,9 +3070,9 @@
         function updateTotalBalance() {
             const emergencyStats = calculateCheckingBalance();
             const freeMoneyStats = calculateFreeMoneyBalance();
-            const weddingStats = calculateWeddingBalance();
+            const fondoStats = calculateFondoBalance();
             
-            const totalBalance = emergencyStats.balance + freeMoneyStats.balance + weddingStats.balance + currentMonthlyBudgetBalance;
+            const totalBalance = emergencyStats.balance + freeMoneyStats.balance + fondoStats.balance + currentMonthlyBudgetBalance;
             
             document.getElementById('checking-total-balance').textContent = `$${totalBalance.toFixed(2)}`;
         }
@@ -3257,9 +3257,9 @@
         window.addFreeMoneyTransaction = addFreeMoneyTransaction;
         window.editFreeMoneyTransaction = editFreeMoneyTransaction;
         window.deleteFreeMoneyTransaction = deleteFreeMoneyTransaction;
-        window.addWeddingTransaction = addWeddingTransaction;
-        window.editWeddingTransaction = editWeddingTransaction;
-        window.deleteWeddingTransaction = deleteWeddingTransaction;
+        window.addFondoTransaction = addFondoTransaction;
+        window.editFondoTransaction = editFondoTransaction;
+        window.deleteFondoTransaction = deleteFondoTransaction;
         window.addCheckingTransaction = addCheckingTransaction;
         window.editCheckingTransaction = editCheckingTransaction;
         window.deleteCheckingTransaction = deleteCheckingTransaction;
