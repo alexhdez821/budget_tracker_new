@@ -2122,10 +2122,12 @@
                 if (category === 'Free Money') {
                     const spent = spending[category] || 0;
                     const dynamicBudget = dynamicBudgets.freeMoneyBudget;
-                    const remaining = dynamicBudget - spent;
-                    const percentage = dynamicBudget > 0 ? Math.min((spent / dynamicBudget) * 100, 100) : 0;
+                    const deposit = deposits[category] || 0;
+                    const effectiveBudget = dynamicBudget + deposit;
+                    const remaining = effectiveBudget - spent;
+                    const percentage = effectiveBudget > 0 ? Math.min((spent / effectiveBudget) * 100, 100) : 0;
                     
-                    totalBudget += dynamicBudget;
+                    totalBudget += effectiveBudget;
                     totalSpent += spent;
 
                     let progressClass = 'low';
@@ -2139,7 +2141,7 @@
                                 <div class="budget-category">${category} ${dynamicBudgets.paycheckInfo.isEstimated ? '(estimated)' : ''}</div>
                                 <div class="budget-amounts">
                                     <span class="spent">$${spent.toFixed(2)}</span>
-                                    <span class="budget-limit">/ $${dynamicBudget.toFixed(2)}</span>
+                                    <span class="budget-limit">/ $${effectiveBudget.toFixed(2)}</span>
                                 </div>
                             </div>
                             <div class="progress-bar">
@@ -2149,6 +2151,7 @@
                             </div>
                             <div style="margin-top: 5px; font-size: 12px; color: ${remaining >= 0 ? '#4caf50' : '#f44336'}; font-weight: 600;">
                                 ${remaining >= 0 ? 'Remaining:' : 'Over budget:'} $${Math.abs(remaining).toFixed(2)}
+                                ${deposit > 0 ? `<span style="color: #666; font-weight: 400;"> (includes +$${deposit.toFixed(2)} deposit)</span>` : ''}
                             </div>
                         </div>
                     `;
