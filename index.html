@@ -367,7 +367,7 @@
 
         .amount-filter-controls {
             display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            grid-template-columns: 1fr auto;
             gap: 8px;
             margin-bottom: 12px;
             align-items: end;
@@ -1042,12 +1042,8 @@
 
             <div class="amount-filter-controls">
                 <div>
-                    <label for="amount-filter-min">Min Amount</label>
-                    <input type="number" id="amount-filter-min" placeholder="0.00" step="0.01" min="0">
-                </div>
-                <div>
-                    <label for="amount-filter-max">Max Amount</label>
-                    <input type="number" id="amount-filter-max" placeholder="0.00" step="0.01" min="0">
+                    <label for="amount-filter">Amount</label>
+                    <input type="number" id="amount-filter" placeholder="0.00" step="0.01" min="0">
                 </div>
                 <button type="button" class="clear-filter-btn" onclick="clearAmountFilter()">Clear</button>
             </div>
@@ -1350,8 +1346,7 @@
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let currentFilter = 'all';
-        let amountFilterMin = null;
-        let amountFilterMax = null;
+        let amountFilterAmount = null;
         let selectedCategory = null; // No default category
         let selectedType = 'expense'; // Default type
         let editingTransactionId = null; // Track if we're editing
@@ -2267,28 +2262,19 @@
         }
 
         function applyAmountFilter() {
-            const minInput = document.getElementById('amount-filter-min').value;
-            const maxInput = document.getElementById('amount-filter-max').value;
+            const amountInput = document.getElementById('amount-filter').value;
+            amountFilterAmount = amountInput === '' ? null : parseFloat(amountInput);
 
-            amountFilterMin = minInput === '' ? null : parseFloat(minInput);
-            amountFilterMax = maxInput === '' ? null : parseFloat(maxInput);
-
-            if (amountFilterMin !== null && Number.isNaN(amountFilterMin)) {
-                amountFilterMin = null;
-            }
-
-            if (amountFilterMax !== null && Number.isNaN(amountFilterMax)) {
-                amountFilterMax = null;
+            if (amountFilterAmount !== null && Number.isNaN(amountFilterAmount)) {
+                amountFilterAmount = null;
             }
 
             updateTransactionList();
         }
 
         function clearAmountFilter() {
-            document.getElementById('amount-filter-min').value = '';
-            document.getElementById('amount-filter-max').value = '';
-            amountFilterMin = null;
-            amountFilterMax = null;
+            document.getElementById('amount-filter').value = '';
+            amountFilterAmount = null;
             updateTransactionList();
         }
 
@@ -2304,9 +2290,8 @@
                 const matchesMonth = tDate.getMonth() === currentMonth && 
                                     tDate.getFullYear() === currentYear;
                 const matchesFilter = currentFilter === 'all' || t.category === currentFilter;
-                const matchesMinAmount = amountFilterMin === null || t.amount >= amountFilterMin;
-                const matchesMaxAmount = amountFilterMax === null || t.amount <= amountFilterMax;
-                return matchesMonth && matchesFilter && matchesMinAmount && matchesMaxAmount;
+                const matchesAmount = amountFilterAmount === null || t.amount === amountFilterAmount;
+                return matchesMonth && matchesFilter && matchesAmount;
             });
 
             if (monthTransactions.length === 0) {
@@ -3358,8 +3343,7 @@
         renderCategoryButtons();
         renderFilterTabs();
 
-        document.getElementById('amount-filter-min').addEventListener('input', applyAmountFilter);
-        document.getElementById('amount-filter-max').addEventListener('input', applyAmountFilter);
+        document.getElementById('amount-filter').addEventListener('input', applyAmountFilter);
 
         updateDisplay();
         updateCheckingDisplay();
