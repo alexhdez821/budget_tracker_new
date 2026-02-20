@@ -365,6 +365,31 @@
             padding-bottom: 5px;
         }
 
+        .amount-filter-controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: end;
+        }
+
+        .amount-filter-controls input {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .clear-filter-btn {
+            border: none;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
         .filter-tab {
             background: #f0f0f0;
             border: none;
@@ -1015,6 +1040,14 @@
                 <!-- Filter tabs will be dynamically populated here -->
             </div>
 
+            <div class="amount-filter-controls">
+                <div>
+                    <label for="amount-filter">Amount</label>
+                    <input type="number" id="amount-filter" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <button type="button" class="clear-filter-btn" onclick="clearAmountFilter()">Clear</button>
+            </div>
+
             <div id="transaction-list"></div>
         </div>
     </div>
@@ -1313,6 +1346,7 @@
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let currentFilter = 'all';
+        let amountFilterAmount = null;
         let selectedCategory = null; // No default category
         let selectedType = 'expense'; // Default type
         let editingTransactionId = null; // Track if we're editing
@@ -1363,6 +1397,7 @@
             // Add "All" tab first
             const allTab = document.createElement('button');
             allTab.className = 'filter-tab active';
+            allTab.dataset.filterCategory = 'all';
             allTab.onclick = () => filterCategory('all');
             allTab.textContent = 'All';
             container.appendChild(allTab);
@@ -1371,6 +1406,7 @@
             categoryList.forEach(category => {
                 const tab = document.createElement('button');
                 tab.className = 'filter-tab';
+                tab.dataset.filterCategory = category;
                 tab.onclick = () => filterCategory(category);
                 
                 // Add emoji for Paycheck
@@ -2216,8 +2252,29 @@
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            event.target.classList.add('active');
+
+            const targetTab = document.querySelector(`.filter-tab[data-filter-category="${category}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
             
+            updateTransactionList();
+        }
+
+        function applyAmountFilter() {
+            const amountInput = document.getElementById('amount-filter').value;
+            amountFilterAmount = amountInput === '' ? null : parseFloat(amountInput);
+
+            if (amountFilterAmount !== null && Number.isNaN(amountFilterAmount)) {
+                amountFilterAmount = null;
+            }
+
+            updateTransactionList();
+        }
+
+        function clearAmountFilter() {
+            document.getElementById('amount-filter').value = '';
+            amountFilterAmount = null;
             updateTransactionList();
         }
 
@@ -2233,7 +2290,8 @@
                 const matchesMonth = tDate.getMonth() === currentMonth && 
                                     tDate.getFullYear() === currentYear;
                 const matchesFilter = currentFilter === 'all' || t.category === currentFilter;
-                return matchesMonth && matchesFilter;
+                const matchesAmount = amountFilterAmount === null || t.amount === amountFilterAmount;
+                return matchesMonth && matchesFilter && matchesAmount;
             });
 
             if (monthTransactions.length === 0) {
@@ -3249,6 +3307,7 @@
         // Make functions globally accessible
         window.changeMonth = changeMonth;
         window.filterCategory = filterCategory;
+        window.clearAmountFilter = clearAmountFilter;
         window.addTransaction = addTransaction;
         window.editTransaction = editTransaction;
         window.deleteTransaction = deleteTransaction;
@@ -3283,6 +3342,9 @@
         // Initial load
         renderCategoryButtons();
         renderFilterTabs();
+
+        document.getElementById('amount-filter').addEventListener('input', applyAmountFilter);
+
         updateDisplay();
         updateCheckingDisplay();
     </script>
