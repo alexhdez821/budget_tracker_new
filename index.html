@@ -367,13 +367,14 @@
 
         .amount-filter-controls {
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr 1fr auto;
             gap: 8px;
             margin-bottom: 12px;
             align-items: end;
         }
 
-        .amount-filter-controls input {
+        .amount-filter-controls input,
+        .amount-filter-controls select {
             padding: 10px;
             font-size: 14px;
         }
@@ -1045,6 +1046,13 @@
                     <label for="amount-filter">Amount</label>
                     <input type="number" id="amount-filter" placeholder="0.00" step="0.01" min="0">
                 </div>
+                <div>
+                    <label for="sort-order">Sort</label>
+                    <select id="sort-order">
+                        <option value="date_desc">Newest</option>
+                        <option value="amount_desc">Biggest to smallest</option>
+                    </select>
+                </div>
                 <button type="button" class="clear-filter-btn" onclick="clearAmountFilter()">Clear</button>
             </div>
 
@@ -1347,6 +1355,7 @@
         let currentYear = new Date().getFullYear();
         let currentFilter = 'all';
         let amountFilterAmount = null;
+        let currentSortOrder = 'date_desc';
         let selectedCategory = null; // No default category
         let selectedType = 'expense'; // Default type
         let editingTransactionId = null; // Track if we're editing
@@ -2278,6 +2287,11 @@
             updateTransactionList();
         }
 
+        function updateSortOrder() {
+            currentSortOrder = document.getElementById('sort-order').value;
+            updateTransactionList();
+        }
+
         // Update transaction list
         function updateTransactionList() {
             const list = document.getElementById('transaction-list');
@@ -2299,8 +2313,17 @@
                 return;
             }
 
-            // Sort by date (newest first)
-            monthTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (currentSortOrder === 'amount_desc') {
+                monthTransactions.sort((a, b) => {
+                    if (b.amount !== a.amount) {
+                        return b.amount - a.amount;
+                    }
+                    return new Date(b.date) - new Date(a.date);
+                });
+            } else {
+                // Sort by date (newest first)
+                monthTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
 
             list.innerHTML = monthTransactions.map(t => {
                 // Fix timezone issue - parse date as local time
@@ -3344,6 +3367,7 @@
         renderFilterTabs();
 
         document.getElementById('amount-filter').addEventListener('input', applyAmountFilter);
+        document.getElementById('sort-order').addEventListener('change', updateSortOrder);
 
         updateDisplay();
         updateCheckingDisplay();
