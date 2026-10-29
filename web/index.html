@@ -8,7 +8,9 @@
     <meta name="apple-mobile-web-app-title" content="Budget Tracker">
     <title>Monthly Budget Tracker</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/budget-app.png">
-    <style>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#667eea">
+    <style nonce="__CSP_NONCE__">
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +21,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
-            padding-bottom: 90px;
+            padding-bottom: 150px;
         }
 
         .content-view {
@@ -870,15 +872,49 @@
             font-size: 12px;
             cursor: pointer;
         }
+
+        .sync-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 96px;
+            z-index: 90;
+            background: #ffffff;
+            border-top: 1px solid #e6e8ee;
+            padding: 8px 12px 10px;
+            font-size: 12px;
+            color: #444;
+        }
+
+        .sync-bar-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .sync-bar-actions button {
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sync-bar-actions button.secondary {
+            background: #eef0f6;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>💰 Monthly Budget</h1>
         <div class="month-selector">
-            <button onclick="changeMonth(-1)">←</button>
+            <button data-action="change-month" data-delta="-1">←</button>
             <div class="current-month" id="current-month"></div>
-            <button onclick="changeMonth(1)">→</button>
+            <button data-action="change-month" data-delta="1">→</button>
         </div>
     </div>
 
@@ -897,25 +933,25 @@
                 <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Emergency Fund</div>
                     <div style="font-size: 20px; font-weight: 600; color: #667eea; margin-bottom: 10px;" id="checking-emergency-balance">$0.00</div>
-                    <button onclick="openStartingBalanceModal()" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">Set Starting</button>
+                    <button data-action="open-starting-balance" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">Set Starting</button>
                 </div>
                 <div style="background: rgba(156, 39, 176, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Monthly Budget</div>
-                    <select id="monthly-budget-selector" onchange="updateMonthlyBudgetDisplay()" style="width: 100%; padding: 6px; border: 2px solid #9c27b0; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: white; color: #9c27b0; font-weight: 600;">
+                    <select id="monthly-budget-selector"  style="width: 100%; padding: 6px; border: 2px solid #9c27b0; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: white; color: #9c27b0; font-weight: 600;">
                         <!-- Will be populated by JavaScript -->
                     </select>
                     <div style="font-size: 20px; font-weight: 600; color: #9c27b0; margin-bottom: 10px;" id="checking-monthly-balance">$0.00</div>
-                    <button onclick="navigateTo('expenses')" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Expenses</button>
+                    <button data-action="navigate" data-view="expenses" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Expenses</button>
                 </div>
                 <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Free Money</div>
                     <div style="font-size: 20px; font-weight: 600; color: #4caf50; margin-bottom: 10px;" id="checking-free-money-balance">$0.00</div>
-                    <button onclick="navigateTo('free')" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
+                    <button data-action="navigate" data-view="free" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
                 </div>
                 <div style="background: rgba(255, 152, 0, 0.1); padding: 15px; border-radius: 10px; text-align: center;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Fondo</div>
                     <div style="font-size: 20px; font-weight: 600; color: #ff9800; margin-bottom: 10px;" id="checking-fondo-balance">$0.00</div>
-                    <button onclick="navigateTo('fondo')" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
+                    <button data-action="navigate" data-view="fondo" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;">View Account</button>
                 </div>
             </div>
         </div>
@@ -947,7 +983,7 @@
                 </div>
             </div>
 
-            <button class="primary" onclick="addCheckingTransaction()" id="checking-submit-btn">Add Transaction</button>
+            <button class="primary" data-action="add-checking" id="checking-submit-btn">Add Transaction</button>
         </div>
 
         <!-- Transaction History -->
@@ -964,8 +1000,8 @@
             <div class="section-title" style="display: block;">
                 Budget Overview
                 <div style="margin-top: 10px;">
-                    <button class="manage-categories-btn" onclick="openManageCategoriesModal()">Manage Categories</button>
-                    <button class="edit-budgets-btn" onclick="openBudgetModal()">Edit Budgets</button>
+                    <button class="manage-categories-btn" data-action="open-categories">Manage Categories</button>
+                    <button class="edit-budgets-btn" data-action="open-budgets">Edit Budgets</button>
                 </div>
             </div>
             
@@ -986,7 +1022,7 @@
             <div class="upload-section">
                 <h3>📸 Scan Transaction</h3>
                 <div class="upload-btn-wrapper">
-                    <button class="upload-btn" onclick="document.getElementById('image-input').click()">
+                    <button class="upload-btn" data-action="pick-image">
                         📷 Upload Screenshot
                     </button>
                     <input type="file" id="image-input" accept="image/*">
@@ -1030,7 +1066,7 @@
                 </div>
             </div>
 
-            <button class="primary" onclick="addTransaction()" id="submit-btn">Add Transaction</button>
+            <button class="primary" data-action="add-expense" id="submit-btn">Add Transaction</button>
         </div>
 
         <!-- Transactions -->
@@ -1053,7 +1089,7 @@
                         <option value="amount_desc">Biggest to smallest</option>
                     </select>
                 </div>
-                <button type="button" class="clear-filter-btn" onclick="clearAmountFilter()">Clear</button>
+                <button type="button" class="clear-filter-btn" data-action="clear-amount">Clear</button>
             </div>
 
             <div id="transaction-list"></div>
@@ -1111,7 +1147,7 @@
                 </div>
             </div>
 
-            <button class="primary" onclick="addFreeMoneyTransaction()" id="free-submit-btn">Add Transaction</button>
+            <button class="primary" data-action="add-free" id="free-submit-btn">Add Transaction</button>
         </div>
 
         <!-- Free Money Transactions -->
@@ -1172,7 +1208,7 @@
                 </div>
             </div>
 
-            <button class="primary" onclick="addFondoTransaction()" id="fondo-submit-btn">Add Transaction</button>
+            <button class="primary" data-action="add-fondo" id="fondo-submit-btn">Add Transaction</button>
         </div>
 
         <!-- Fondo Transactions -->
@@ -1187,7 +1223,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">Manage Budget Categories</div>
-                <button class="close-btn" onclick="closeManageCategoriesModal()">&times;</button>
+                <button class="close-btn" data-action="close-categories">&times;</button>
             </div>
             
             <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
@@ -1199,7 +1235,7 @@
                 <input type="text" id="new-category-name" placeholder="e.g., Entertainment">
             </div>
 
-            <button class="primary" onclick="addNewCategory()">Add Category</button>
+            <button class="primary" data-action="add-category">Add Category</button>
 
             <div class="category-list" id="category-list">
                 <!-- Categories will be populated here -->
@@ -1212,7 +1248,7 @@
         <div class="modal-content" style="max-width: 650px;">
             <div class="modal-header">
                 <div class="modal-title">Budget Setup</div>
-                <button class="close-btn" onclick="closeBudgetModal()">&times;</button>
+                <button class="close-btn" data-action="close-budgets">&times;</button>
             </div>
             
             <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
@@ -1228,7 +1264,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title" id="budget-item-modal-title">Add Item to Subscriptions</div>
-                <button class="close-btn" onclick="closeBudgetItemModal()">&times;</button>
+                <button class="close-btn" data-action="close-budget-item">&times;</button>
             </div>
             
             <div class="input-group">
@@ -1241,7 +1277,7 @@
                 <input type="number" id="budget-item-amount" step="0.01" placeholder="0.00">
             </div>
 
-            <button class="primary" onclick="saveBudgetItem()">Add Item</button>
+            <button class="primary" data-action="save-budget-item">Add Item</button>
         </div>
     </div>
 
@@ -1250,7 +1286,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">Set Starting Balance</div>
-                <button class="close-btn" onclick="closeStartingBalanceModal()">&times;</button>
+                <button class="close-btn" data-action="close-starting-balance">&times;</button>
             </div>
             
             <div class="input-group">
@@ -1262,7 +1298,7 @@
                 This is your initial checking account balance (e.g., your emergency fund). Transactions will be added/subtracted from this amount.
             </p>
 
-            <button class="primary" onclick="saveStartingBalance()">Save Starting Balance</button>
+            <button class="primary" data-action="save-starting-balance">Save Starting Balance</button>
         </div>
     </div>
 
@@ -1281,31 +1317,46 @@
             <div class="transaction-selector-header">Select Transaction</div>
             <div class="transaction-selector-subtext">Found multiple transactions - tap one to add it:</div>
             <div id="transaction-options"></div>
-            <button class="close-selector-btn" onclick="closeTransactionSelector()">Cancel</button>
+            <button class="close-selector-btn" data-action="close-selector">Cancel</button>
+        </div>
+    </div>
+
+
+    <div class="sync-bar" id="sync-bar">
+        <div id="sync-status">Checking the shared account…</div>
+        <div class="sync-bar-actions" id="sync-actions" hidden>
+            <button type="button" data-sync-action="import" hidden>Copy this phone</button>
+            <button type="button" class="secondary" data-sync-action="reload" hidden>Reload latest</button>
+            <button type="button" data-sync-action="keep" hidden>Keep mine</button>
+        </div>
+        <div class="sync-bar-actions">
+            <button type="button" class="secondary" id="download-backup">Backup</button>
+            <button type="button" class="secondary" id="restore-backup">Restore</button>
+            <input type="file" id="restore-file" accept="application/json,.json" hidden>
         </div>
     </div>
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <button class="nav-btn active" onclick="navigateTo('checking')">
+        <button class="nav-btn active" data-action="navigate" data-view="checking">
             <div class="nav-icon">🏦</div>
             <div class="nav-label">Checking</div>
         </button>
-        <button class="nav-btn" onclick="navigateTo('expenses')">
+        <button class="nav-btn" data-action="navigate" data-view="expenses">
             <div class="nav-icon">📊</div>
             <div class="nav-label">Expenses</div>
         </button>
-        <button class="nav-btn" onclick="navigateTo('free')">
+        <button class="nav-btn" data-action="navigate" data-view="free">
             <div class="nav-icon">💸</div>
             <div class="nav-label">Free Money</div>
         </button>
-        <button class="nav-btn" onclick="navigateTo('fondo')">
+        <button class="nav-btn" data-action="navigate" data-view="fondo">
             <div class="nav-icon">🏛️</div>
             <div class="nav-label">Fondo</div>
         </button>
     </div>
 
-    <script>
+    <script nonce="__CSP_NONCE__">
         // Initialize default categories if none exist
         function getDefaultCategories() {
             return {
@@ -1369,8 +1420,30 @@
         let merchantDatabase = JSON.parse(localStorage.getItem('merchantDatabase')) || {};
 
         // Save category list
+        function onBudgetLocalChange() {
+            if (window.budgetSyncIgnore) return;
+            if (typeof window.onBudgetLocalChangeExternal === 'function') {
+                window.onBudgetLocalChangeExternal();
+            }
+        }
+
+        function escapeAttr(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;');
+        }
+
+        function reviveDomId(value) {
+            if (value != null && /^\d+$/.test(value) && Number.isSafeInteger(Number(value))) return Number(value);
+            return value;
+        }
+
         function saveCategoryList() {
             localStorage.setItem('categoryList', JSON.stringify(categoryList));
+            localStorage.setItem('budgets', JSON.stringify(budgets));
+            localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
+            onBudgetLocalChange();
         }
 
         // Render category buttons dynamically
@@ -1544,16 +1617,18 @@
         }
 
         // Bottom navigation function
-        function navigateTo(view) {
+        function navigateTo(view, triggerEvent) {
             currentView = view;
             
             // Update active state of nav buttons
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            if (event && event.target) {
-                event.target.closest('.nav-btn').classList.add('active');
-            }
+            const fromEvent = triggerEvent && triggerEvent.target && triggerEvent.target.closest
+                ? triggerEvent.target.closest('.nav-btn')
+                : null;
+            const nav = fromEvent || document.querySelector('.nav-btn[data-view="' + view + '"]');
+            if (nav) nav.classList.add('active');
             
             // Update body class for header visibility
             document.body.className = '';
@@ -1616,7 +1691,7 @@
                 const mimeType = file.type;
 
                 // Call Netlify Function instead of Claude API directly
-                const response = await fetch('/.netlify/functions/analyze-transaction', {
+                const response = await fetch('/api/analyze-transaction', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1670,7 +1745,7 @@
                 }) : 'No date';
                 
                 return `
-                    <div class="transaction-option" onclick="selectTransaction(${index})">
+                    <div class="transaction-option" data-action="select-ocr" data-index="${index}">
                         <div class="transaction-option-store">${t.store || t.description || 'Unknown'}</div>
                         <div class="transaction-option-details">
                             <span class="transaction-option-amount">$${t.amount.toFixed(2)}</span>
@@ -1973,6 +2048,7 @@
             const lowerMerchant = merchant.toLowerCase();
             merchantDatabase[lowerMerchant] = category;
             localStorage.setItem('merchantDatabase', JSON.stringify(merchantDatabase));
+            onBudgetLocalChange();
         }
 
         // Type button selection
@@ -2355,8 +2431,8 @@
                             ${isPaycheck ? '<span>•</span><span style="color: #4caf50; font-weight: 600;">Income</span>' : ''}
                             ${isDeposit && !isPaycheck ? '<span>•</span><span style="color: #4caf50; font-weight: 600;">Deposit</span>' : ''}
                         </div>
-                        <button class="edit-btn" onclick="editTransaction(${t.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteTransaction(${t.id})">Delete</button>
+                        <button class="edit-btn" data-action="edit-expense" data-id="${t.id}">Edit</button>
+                        <button class="delete-btn" data-action="delete-expense" data-id="${t.id}">Delete</button>
                     </div>
                 `;
             }).join('');
@@ -2538,12 +2614,12 @@
                                         <span class="breakdown-item-amount" style="color: ${isPaycheck ? '#4caf50' : '#333'};">
                                             ${isPaycheck ? '+' : ''}$${item.amount.toFixed(2)}
                                         </span>
-                                        <button class="breakdown-delete-btn" onclick="deleteBudgetItem('${category}', ${item.id})">Delete</button>
+                                        <button class="breakdown-delete-btn" data-action="delete-budget-item" data-category="${escapeAttr(category)}" data-id="${item.id}">Delete</button>
                                     </div>
                                 </div>
                             `).join('')}
                         </div>
-                        <button class="breakdown-add-btn" onclick="openBudgetItemModal('${category}')">+ Add Item</button>
+                        <button class="breakdown-add-btn" data-action="open-budget-item" data-category="${escapeAttr(category)}">+ Add Item</button>
                     </div>
                 `;
             });
@@ -2605,6 +2681,7 @@
             // Save to localStorage
             localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
             localStorage.setItem('budgets', JSON.stringify(budgets));
+            onBudgetLocalChange();
             
             // Update displays
             updateBudgetBreakdownInModal();
@@ -2626,6 +2703,7 @@
             // Save to localStorage
             localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
             localStorage.setItem('budgets', JSON.stringify(budgets));
+            onBudgetLocalChange();
             
             // Update displays
             updateBudgetBreakdownInModal();
@@ -2635,6 +2713,7 @@
         // Save data
         function saveData() {
             localStorage.setItem('transactions', JSON.stringify(transactions));
+            onBudgetLocalChange();
         }
 
         // Update all displays
@@ -2726,8 +2805,8 @@
                             <span>•</span>
                             <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
                         </div>
-                        <button class="edit-btn" onclick="editFreeMoneyTransaction(${t.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteFreeMoneyTransaction(${t.id})">Delete</button>
+                        <button class="edit-btn" data-action="edit-free" data-id="${t.id}">Edit</button>
+                        <button class="delete-btn" data-action="delete-free" data-id="${t.id}">Delete</button>
                     </div>
                 `;
             }).join('');
@@ -2823,6 +2902,7 @@
         // Save Free Money data
         function saveFreeMoneyData() {
             localStorage.setItem('freeMoneyTransactions', JSON.stringify(freeMoneyTransactions));
+            onBudgetLocalChange();
         }
 
         // ============ FONDO FUNCTIONS ============
@@ -2907,8 +2987,8 @@
                             <span>•</span>
                             <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
                         </div>
-                        <button class="edit-btn" onclick="editFondoTransaction(${t.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteFondoTransaction(${t.id})">Delete</button>
+                        <button class="edit-btn" data-action="edit-fondo" data-id="${t.id}">Edit</button>
+                        <button class="delete-btn" data-action="delete-fondo" data-id="${t.id}">Delete</button>
                     </div>
                 `;
             }).join('');
@@ -3004,6 +3084,7 @@
         // Save Fondo data
         function saveFondoData() {
             localStorage.setItem('fondoTransactions', JSON.stringify(fondoTransactions));
+            onBudgetLocalChange();
         }
 
         // ============ CHECKING ACCOUNT FUNCTIONS ============
@@ -3198,8 +3279,8 @@
                             <span>•</span>
                             <span style="color: ${isMoneyIn ? '#4caf50' : '#f44336'}; font-weight: 600;">${isMoneyIn ? 'Money In' : 'Money Out'}</span>
                         </div>
-                        <button class="edit-btn" onclick="editCheckingTransaction(${t.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteCheckingTransaction(${t.id})">Delete</button>
+                        <button class="edit-btn" data-action="edit-checking" data-id="${t.id}">Edit</button>
+                        <button class="delete-btn" data-action="delete-checking" data-id="${t.id}">Delete</button>
                     </div>
                 `;
             }).join('');
@@ -3295,6 +3376,7 @@
         // Save Checking data
         function saveCheckingData() {
             localStorage.setItem('checkingTransactions', JSON.stringify(checkingTransactions));
+            onBudgetLocalChange();
         }
 
         // Starting balance modal functions
@@ -3311,6 +3393,7 @@
             const balance = parseFloat(document.getElementById('starting-balance-input').value) || 0;
             checkingStartingBalance = balance;
             localStorage.setItem('checkingStartingBalance', checkingStartingBalance);
+            onBudgetLocalChange();
             closeStartingBalanceModal();
             updateCheckingDisplay();
         }
@@ -3362,6 +3445,110 @@
         window.addNewCategory = addNewCategory;
         window.deleteCategory = deleteCategory;
 
+
+        function collectState() {
+            return {
+                categoryList,
+                budgets,
+                budgetBreakdown,
+                transactions,
+                freeMoneyTransactions,
+                fondoTransactions,
+                checkingTransactions,
+                checkingStartingBalance,
+                merchantDatabase
+            };
+        }
+
+        function hasLocalHistory() {
+            return [
+                'categoryList', 'budgets', 'budgetBreakdown', 'transactions',
+                'freeMoneyTransactions', 'fondoTransactions', 'checkingTransactions',
+                'checkingStartingBalance', 'merchantDatabase'
+            ].some(function (key) { return localStorage.getItem(key) !== null; });
+        }
+
+        function applyRemoteState(state) {
+            window.budgetSyncIgnore = true;
+            categoryList = state.categoryList.slice();
+            budgets = Object.assign({}, state.budgets);
+            budgetBreakdown = JSON.parse(JSON.stringify(state.budgetBreakdown || {}));
+            transactions = state.transactions.slice();
+            freeMoneyTransactions = state.freeMoneyTransactions.slice();
+            fondoTransactions = state.fondoTransactions.slice();
+            checkingTransactions = state.checkingTransactions.slice();
+            checkingStartingBalance = Number(state.checkingStartingBalance) || 0;
+            merchantDatabase = Object.assign({}, state.merchantDatabase);
+            localStorage.setItem('categoryList', JSON.stringify(categoryList));
+            localStorage.setItem('budgets', JSON.stringify(budgets));
+            localStorage.setItem('budgetBreakdown', JSON.stringify(budgetBreakdown));
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            localStorage.setItem('freeMoneyTransactions', JSON.stringify(freeMoneyTransactions));
+            localStorage.setItem('fondoTransactions', JSON.stringify(fondoTransactions));
+            localStorage.setItem('checkingTransactions', JSON.stringify(checkingTransactions));
+            localStorage.setItem('checkingStartingBalance', String(checkingStartingBalance));
+            localStorage.setItem('merchantDatabase', JSON.stringify(merchantDatabase));
+            renderCategoryButtons();
+            renderFilterTabs();
+            updateDisplay();
+            updateCheckingDisplay();
+            updateFreeMoneyDisplay();
+            updateFondoDisplay();
+            if (document.getElementById('manage-categories-modal').classList.contains('active')) {
+                renderCategoryListInModal();
+            }
+            if (document.getElementById('budget-modal').classList.contains('active')) {
+                updateBudgetBreakdownInModal();
+            }
+            window.budgetSyncIgnore = false;
+        }
+
+        window.budgetHadHistoryAtBoot = hasLocalHistory();
+        window.budgetBridge = {
+            collectState: collectState,
+            applyRemoteState: applyRemoteState,
+            hasLocalHistory: hasLocalHistory,
+            hadHistoryAtBoot: window.budgetHadHistoryAtBoot
+        };
+
+        document.addEventListener('click', function (event) {
+            const el = event.target.closest('[data-action]');
+            if (!el) return;
+            const action = el.dataset.action;
+            if (action === 'navigate') navigateTo(el.dataset.view, event);
+            else if (action === 'change-month') changeMonth(Number(el.dataset.delta));
+            else if (action === 'open-starting-balance') openStartingBalanceModal();
+            else if (action === 'add-checking') addCheckingTransaction();
+            else if (action === 'add-expense') addTransaction();
+            else if (action === 'add-free') addFreeMoneyTransaction();
+            else if (action === 'add-fondo') addFondoTransaction();
+            else if (action === 'open-categories') openManageCategoriesModal();
+            else if (action === 'close-categories') closeManageCategoriesModal();
+            else if (action === 'add-category') addNewCategory();
+            else if (action === 'open-budgets') openBudgetModal();
+            else if (action === 'close-budgets') closeBudgetModal();
+            else if (action === 'open-budget-item') openBudgetItemModal(el.dataset.category);
+            else if (action === 'close-budget-item') closeBudgetItemModal();
+            else if (action === 'save-budget-item') saveBudgetItem();
+            else if (action === 'delete-budget-item') deleteBudgetItem(el.dataset.category, reviveDomId(el.dataset.id));
+            else if (action === 'close-starting-balance') closeStartingBalanceModal();
+            else if (action === 'save-starting-balance') saveStartingBalance();
+            else if (action === 'pick-image') document.getElementById('image-input').click();
+            else if (action === 'clear-amount') clearAmountFilter();
+            else if (action === 'close-selector') closeTransactionSelector();
+            else if (action === 'select-ocr') selectTransaction(Number(el.dataset.index));
+            else if (action === 'edit-expense') editTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'delete-expense') deleteTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'edit-free') editFreeMoneyTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'delete-free') deleteFreeMoneyTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'edit-fondo') editFondoTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'delete-fondo') deleteFondoTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'edit-checking') editCheckingTransaction(reviveDomId(el.dataset.id));
+            else if (action === 'delete-checking') deleteCheckingTransaction(reviveDomId(el.dataset.id));
+        });
+
+        document.getElementById('monthly-budget-selector').addEventListener('change', updateMonthlyBudgetDisplay);
+
         // Initial load
         renderCategoryButtons();
         renderFilterTabs();
@@ -3371,6 +3558,10 @@
 
         updateDisplay();
         updateCheckingDisplay();
+    </script>
+    <script type="module" nonce="__CSP_NONCE__">
+        import { startBudgetSync } from "/sync.js";
+        startBudgetSync(window.budgetBridge);
     </script>
 </body>
 </html>
