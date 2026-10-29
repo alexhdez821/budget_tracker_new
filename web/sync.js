@@ -761,7 +761,9 @@ async function restoreBackup(bridge, file) {
     return;
   }
   if (!response.ok) {
-    window.alert("Could not restore that file.");
+    const failure = await response.json().catch(() => null);
+    const message = failure && typeof failure.error === "string" ? failure.error : "Could not restore that file.";
+    window.alert(message);
     return;
   }
   const saved = await response.json();
