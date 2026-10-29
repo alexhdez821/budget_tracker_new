@@ -1,90 +1,203 @@
-import { PullGesture } from "./pull-gesture";
+import { OVERLAY_SELECTOR, PHONE_LAYOUT_QUERY, PULL_THRESHOLD_PX, classifyPull, pullIndicator, refreshBlocked, FIELD_SELECTOR } from "./pull-classify";
 
-export function isPullRefreshPhone(win: Pick<Window, "matchMedia">): boolean {
-  return win.matchMedia("(pointer: coarse)").matches && win.matchMedia("(hover: none)").matches;
+const DATE_STRIP_SELECTOR = ".date-wheel, .week-strip";
+
+interface Gesture {
+  mode: "touch" | "pointer";
+  id: number;
+  startX: number;
+  startY: number;
+  distance: number;
+  phase: "pending" | "pull" | "cancel";
 }
 
-export function installPullRefresh(options: {
-  onRefresh: () => Promise<void> | void;
-  doc?: Document;
-  win?: Window;
-  isPhone?: () => boolean;
-}): () => void {
-  const doc = options.doc ?? document;
-  const win = options.win ?? window;
-  const isPhone = options.isPhone ?? (() => isPullRefreshPhone(win));
-  const gesture = new PullGesture({
-    atTop: () => (doc.scrollingElement?.scrollTop ?? win.scrollY ?? 0) <= 0,
-    enabled: isPhone,
-  });
+function eventElement(target: EventTarget | null): Element | null {
+  if (target instanceof Element) return target;
+  if (target instanceof Node) return target.parentElement;
+  return null;
+}
 
-  const indicator = doc.createElement("div");
-  indicator.className = "pull-refresh";
-  indicator.setAttribute("aria-hidden", "true");
-  const spinner = doc.createElement("div");
-  spinner.className = "pull-refresh-spinner";
-  indicator.appendChild(spinner);
-  doc.body.appendChild(indicator);
+function scrolledDown(shell: HTMLElement): boolean {
+  if (shell.scrollTop > 1) return true;
+  if (shell.scrollHeight - shell.clientHeight > 1) return false;
+  return (document.scrollingElement?.scrollTop ?? 0) > 1;
+}
 
-  const styleTag = doc.querySelector("style");
-  let pullRule: CSSStyleRule | null = null;
-  const sheet = styleTag?.sheet;
-  if (sheet) {
-    const index = sheet.insertRule(".pull-refresh { --pull: 0px; }", sheet.cssRules.length);
-    const rule = sheet.cssRules[index];
-    if (rule && "style" in rule) pullRule = rule as CSSStyleRule;
-  }
+export function attachPullRefresh(
+  shell: HTMLElement,
+  options: { onRefresh: () => Promise<void>; blocked?: () => boolean },
+): () => void {
+  const indicator = shell.querySelector(".pull-refresh");
+  if (!(indicator instanceof HTMLElement)) return () => {};
+  const phone = window.matchMedia(PHONE_LAYOUT_QUERY);
+  let gesture: Gesture | null = null;
+  let refreshing = false;
+  const pullRule = findPullRule();
 
-  function paint(): void {
-    pullRule?.style.setProperty("--pull", `${gesture.distance}px`);
-    indicator.classList.toggle("is-pulling", gesture.phase === "pulling" || gesture.phase === "armed");
-    indicator.classList.toggle("is-armed", gesture.phase === "armed" || gesture.phase === "refreshing");
-    indicator.classList.toggle("is-refreshing", gesture.phase === "refreshing");
-    doc.documentElement.classList.toggle("is-custom-pull", gesture.phase === "pulling" || gesture.phase === "armed");
-  }
-
-  function onMove(event: TouchEvent): void {
-    const touch = event.touches[0];
-    if (!touch) return;
-    const sample = gesture.move(touch.clientX, touch.clientY);
-    if (sample.preventDefault) event.preventDefault();
-    paint();
-  }
-
-  function detachMove(): void {
-    doc.removeEventListener("touchmove", onMove);
-    doc.removeEventListener("touchend", onEnd);
-    doc.removeEventListener("touchcancel", onEnd);
-  }
-
-  async function onEnd(): Promise<void> {
-    detachMove();
-    const shouldRefresh = gesture.end();
-    paint();
-    if (!shouldRefresh) return;
-    try {
-      await options.onRefresh();
-    } finally {
-      gesture.finish();
-      paint();
-    }
-  }
-
-  function onStart(event: TouchEvent): void {
-    if (event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    if (!touch) return;
-    gesture.start(touch.clientX, touch.clientY);
-    if (!gesture.isTracking) return;
-    doc.addEventListener("touchmove", onMove, { passive: false });
-    doc.addEventListener("touchend", onEnd);
-    doc.addEventListener("touchcancel", onEnd);
-  }
-
-  doc.addEventListener("touchstart", onStart, { passive: true });
-  return () => {
-    detachMove();
-    doc.removeEventListener("touchstart", onStart);
-    indicator.remove();
+  const paint = (state: "idle" | "pulling" | "ready" | "refreshing", distance = 0) => {
+    indicator.dataset.state = state;
+    indicator.hidden = state === "idle";
+    indicator.setAttribute("aria-hidden", state === "idle" ? "true" : "false");
+    const shown = pullIndicator(distance);
+    const target = pullRule?.style ?? indicator.style;
+    target.setProperty("--pull", shown.pull);
+    target.setProperty("--pull-opacity", shown.opacity);
+    if (state === "refreshing") indicator.setAttribute("aria-label", "Refreshing");
+    else if (state === "ready") indicator.setAttribute("aria-label", "Release to refresh");
+    else if (state === "pulling") indicator.setAttribute("aria-label", "Pull to refresh");
+    else indicator.removeAttribute("aria-label");
   };
+  paint("idle");
+
+  const busy = () => options.blocked?.() ?? false;
+
+  const canStart = (target: EventTarget | null) => {
+    if (!phone.matches || refreshing || busy() || refreshBlocked(document) || scrolledDown(shell)) return false;
+    const element = eventElement(target);
+    if (element?.closest(DATE_STRIP_SELECTOR)) return false;
+    if (element?.closest(FIELD_SELECTOR)) return false;
+    if (element?.closest(OVERLAY_SELECTOR)) return false;
+    return true;
+  };
+
+  const moveTo = (x: number, y: number) => {
+    if (!gesture || gesture.phase === "cancel") return;
+    const result = classifyPull({
+      scrollTop: scrolledDown(shell) ? 1 : 0,
+      startX: gesture.startX,
+      startY: gesture.startY,
+      x,
+      y,
+      fromDateStrip: false,
+    });
+    if (busy() || refreshBlocked(document) || result.kind === "cancel") {
+      gesture.phase = "cancel";
+      gesture.distance = 0;
+      paint("idle");
+      return;
+    }
+    if (result.kind === "pending") return;
+    gesture.phase = "pull";
+    gesture.distance = result.distance;
+    paint(result.ready ? "ready" : "pulling", result.distance);
+  };
+
+  const finish = () => {
+    const armed = gesture;
+    gesture = null;
+    if (!armed || armed.phase !== "pull" || armed.distance < PULL_THRESHOLD_PX || refreshing || busy() || refreshBlocked(document)) {
+      if (!refreshing) paint("idle");
+      return;
+    }
+    refreshing = true;
+    paint("refreshing", PULL_THRESHOLD_PX);
+    void options.onRefresh().finally(() => {
+      refreshing = false;
+      if (!gesture) paint("idle");
+    });
+  };
+
+  const onTouchStart = (event: TouchEvent) => {
+    if (event.touches.length > 1) {
+      if (gesture) {
+        gesture.phase = "cancel";
+        paint("idle");
+      }
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch || !canStart(event.target)) return;
+    if (gesture?.mode === "pointer") {
+      gesture.mode = "touch";
+      gesture.id = touch.identifier;
+      return;
+    }
+    if (gesture) return;
+    gesture = {
+      mode: "touch",
+      id: touch.identifier,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      distance: 0,
+      phase: "pending",
+    };
+  };
+
+  const onTouchMove = (event: TouchEvent) => {
+    if (gesture?.mode !== "touch") return;
+    const touch =
+      Array.from(event.touches).find((item) => item.identifier === gesture?.id) ??
+      Array.from(event.changedTouches).find((item) => item.identifier === gesture?.id);
+    if (!touch) return;
+    moveTo(touch.clientX, touch.clientY);
+  };
+
+  const onTouchEnd = (event: TouchEvent) => {
+    if (gesture?.mode !== "touch") return;
+    const changed = Array.from(event.changedTouches);
+    if (changed.length === 0 || changed.some((item) => item.identifier === gesture?.id)) finish();
+  };
+
+  const onPointerDown = (event: PointerEvent) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    if (gesture || !canStart(event.target)) return;
+    gesture = {
+      mode: "pointer",
+      id: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      distance: 0,
+      phase: "pending",
+    };
+  };
+
+  const onPointerMove = (event: PointerEvent) => {
+    if (gesture?.mode !== "pointer" || event.pointerId !== gesture.id) return;
+    moveTo(event.clientX, event.clientY);
+  };
+
+  const onPointerUp = (event: PointerEvent) => {
+    if (gesture?.mode !== "pointer" || event.pointerId !== gesture.id) return;
+    finish();
+  };
+
+  const onScroll = () => {
+    if (!gesture || gesture.phase === "cancel" || !scrolledDown(shell)) return;
+    gesture.phase = "cancel";
+    gesture.distance = 0;
+    paint("idle");
+  };
+
+  const passive: AddEventListenerOptions = { passive: true };
+  shell.addEventListener("touchstart", onTouchStart, passive);
+  shell.addEventListener("pointerdown", onPointerDown, passive);
+  shell.addEventListener("scroll", onScroll, passive);
+  window.addEventListener("touchmove", onTouchMove, passive);
+  window.addEventListener("touchend", onTouchEnd, passive);
+  window.addEventListener("touchcancel", onTouchEnd, passive);
+  window.addEventListener("pointermove", onPointerMove, passive);
+  window.addEventListener("pointerup", onPointerUp, passive);
+  window.addEventListener("pointercancel", onPointerUp, passive);
+
+  return () => {
+    shell.removeEventListener("touchstart", onTouchStart);
+    shell.removeEventListener("pointerdown", onPointerDown);
+    shell.removeEventListener("scroll", onScroll);
+    window.removeEventListener("touchmove", onTouchMove);
+    window.removeEventListener("touchend", onTouchEnd);
+    window.removeEventListener("touchcancel", onTouchEnd);
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("pointercancel", onPointerUp);
+  };
+}
+
+function findPullRule(): CSSStyleRule | null {
+  const sheet = document.querySelector("style")?.sheet;
+  if (!sheet) return null;
+  for (let index = 0; index < sheet.cssRules.length; index += 1) {
+    const rule = sheet.cssRules.item(index);
+    if (rule instanceof CSSStyleRule && rule.selectorText === ".pull-refresh") return rule;
+  }
+  return null;
 }

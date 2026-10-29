@@ -1,4 +1,4 @@
-import { installPullRefresh } from "./pull-refresh";
+import { attachPullRefresh } from "./pull-refresh";
 import { createSyncController, type Banner } from "./sync-client";
 import type { BudgetState } from "./types";
 
@@ -70,7 +70,7 @@ export function startBudgetSync(bridge: BudgetBridge): void {
     input.value = "";
   });
 
-  installPullRefresh({
+  attachPullRefresh(document.documentElement, {
     onRefresh: () => controller.refresh(),
   });
 

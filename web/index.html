@@ -873,23 +873,26 @@
             cursor: pointer;
         }
 
-        html.is-custom-pull {
-            overscroll-behavior-y: none;
-        }
-
         .pull-refresh {
+            --pull: 0px;
+            --pull-opacity: 0;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 80;
-            height: 48px;
+            height: 52px;
             display: flex;
             align-items: center;
             justify-content: center;
             pointer-events: none;
             background: #f5f7fa;
-            transform: translateY(calc(-100% + var(--pull, 0px)));
+            transform: translateY(calc(-100% + var(--pull)));
+            opacity: var(--pull-opacity);
+        }
+
+        .pull-refresh[hidden] {
+            display: none;
         }
 
         .pull-refresh-spinner {
@@ -898,12 +901,10 @@
             border-radius: 50%;
             border: 2px solid rgba(102, 126, 234, 0.25);
             border-top-color: #667eea;
-            opacity: 0.35;
         }
 
-        .pull-refresh.is-armed .pull-refresh-spinner,
-        .pull-refresh.is-refreshing .pull-refresh-spinner {
-            opacity: 1;
+        .pull-refresh[data-state="ready"] .pull-refresh-spinner,
+        .pull-refresh[data-state="refreshing"] .pull-refresh-spinner {
             animation: pull-spin 0.7s linear infinite;
         }
 
@@ -947,6 +948,10 @@
     </style>
 </head>
 <body>
+    <div class="pull-refresh" hidden>
+        <div class="pull-refresh-spinner"></div>
+    </div>
+
     <div class="header">
         <h1>💰 Monthly Budget</h1>
         <div class="month-selector">
