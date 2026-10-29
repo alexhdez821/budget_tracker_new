@@ -20,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "budget-tracker",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "5ba3dd81-78bd-4892-89c6-60dbd999259d",
       "migrations_dir": "migrations"
     }
   ]
