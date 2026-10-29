@@ -1,3 +1,160 @@
+// src/pull-gesture.ts
+var PULL_THRESHOLD_PX = 64;
+var PULL_SLOP_PX = 8;
+var PULL_MAX_PX = 96;
+var PULL_DAMPING = 0.55;
+var PullGesture = class {
+  constructor(options) {
+    this.options = options;
+  }
+  startX = 0;
+  startY = 0;
+  tracking = false;
+  decided = false;
+  phase = "idle";
+  distance = 0;
+  get isTracking() {
+    return this.tracking;
+  }
+  start(x, y) {
+    if (this.phase === "refreshing" || !this.options.enabled() || !this.options.atTop()) {
+      this.tracking = false;
+      return;
+    }
+    this.tracking = true;
+    this.decided = false;
+    this.startX = x;
+    this.startY = y;
+    this.distance = 0;
+    this.phase = "idle";
+  }
+  move(x, y) {
+    if (!this.tracking || this.phase === "refreshing") {
+      return { preventDefault: false, distance: this.distance, phase: this.phase };
+    }
+    if (!this.options.atTop()) {
+      this.reset();
+      return { preventDefault: false, distance: 0, phase: "idle" };
+    }
+    const dx = x - this.startX;
+    const dy = y - this.startY;
+    const slop = this.options.slop ?? PULL_SLOP_PX;
+    if (!this.decided) {
+      if (Math.abs(dx) < slop && Math.abs(dy) < slop) {
+        return { preventDefault: false, distance: 0, phase: "idle" };
+      }
+      if (dy <= 0 || Math.abs(dx) > dy) {
+        this.reset();
+        return { preventDefault: false, distance: 0, phase: "idle" };
+      }
+      this.decided = true;
+    }
+    const max = this.options.max ?? PULL_MAX_PX;
+    this.distance = Math.min(max, Math.max(0, dy) * PULL_DAMPING);
+    const threshold = this.options.threshold ?? PULL_THRESHOLD_PX;
+    this.phase = this.distance >= threshold ? "armed" : "pulling";
+    return { preventDefault: true, distance: this.distance, phase: this.phase };
+  }
+  /** True when the finger released past the threshold. */
+  end() {
+    const refresh = this.phase === "armed";
+    this.tracking = false;
+    this.decided = false;
+    if (refresh) {
+      this.phase = "refreshing";
+      return true;
+    }
+    this.distance = 0;
+    this.phase = "idle";
+    return false;
+  }
+  finish() {
+    this.reset();
+  }
+  reset() {
+    this.tracking = false;
+    this.decided = false;
+    this.distance = 0;
+    this.phase = "idle";
+  }
+};
+
+// src/pull-refresh.ts
+function isPullRefreshPhone(win) {
+  return win.matchMedia("(pointer: coarse)").matches && win.matchMedia("(hover: none)").matches;
+}
+function installPullRefresh(options) {
+  const doc = options.doc ?? document;
+  const win = options.win ?? window;
+  const isPhone = options.isPhone ?? (() => isPullRefreshPhone(win));
+  const gesture = new PullGesture({
+    atTop: () => (doc.scrollingElement?.scrollTop ?? win.scrollY ?? 0) <= 0,
+    enabled: isPhone
+  });
+  const indicator = doc.createElement("div");
+  indicator.className = "pull-refresh";
+  indicator.setAttribute("aria-hidden", "true");
+  const spinner = doc.createElement("div");
+  spinner.className = "pull-refresh-spinner";
+  indicator.appendChild(spinner);
+  doc.body.appendChild(indicator);
+  const styleTag = doc.querySelector("style");
+  let pullRule = null;
+  const sheet = styleTag?.sheet;
+  if (sheet) {
+    const index = sheet.insertRule(".pull-refresh { --pull: 0px; }", sheet.cssRules.length);
+    const rule = sheet.cssRules[index];
+    if (rule && "style" in rule) pullRule = rule;
+  }
+  function paint() {
+    pullRule?.style.setProperty("--pull", `${gesture.distance}px`);
+    indicator.classList.toggle("is-pulling", gesture.phase === "pulling" || gesture.phase === "armed");
+    indicator.classList.toggle("is-armed", gesture.phase === "armed" || gesture.phase === "refreshing");
+    indicator.classList.toggle("is-refreshing", gesture.phase === "refreshing");
+    doc.documentElement.classList.toggle("is-custom-pull", gesture.phase === "pulling" || gesture.phase === "armed");
+  }
+  function onMove(event) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    const sample = gesture.move(touch.clientX, touch.clientY);
+    if (sample.preventDefault) event.preventDefault();
+    paint();
+  }
+  function detachMove() {
+    doc.removeEventListener("touchmove", onMove);
+    doc.removeEventListener("touchend", onEnd);
+    doc.removeEventListener("touchcancel", onEnd);
+  }
+  async function onEnd() {
+    detachMove();
+    const shouldRefresh = gesture.end();
+    paint();
+    if (!shouldRefresh) return;
+    try {
+      await options.onRefresh();
+    } finally {
+      gesture.finish();
+      paint();
+    }
+  }
+  function onStart(event) {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    gesture.start(touch.clientX, touch.clientY);
+    if (!gesture.isTracking) return;
+    doc.addEventListener("touchmove", onMove, { passive: false });
+    doc.addEventListener("touchend", onEnd);
+    doc.addEventListener("touchcancel", onEnd);
+  }
+  doc.addEventListener("touchstart", onStart, { passive: true });
+  return () => {
+    detachMove();
+    doc.removeEventListener("touchstart", onStart);
+    indicator.remove();
+  };
+}
+
 // src/merge.ts
 function money(value) {
   if (!Number.isFinite(value)) return 0;
@@ -744,6 +901,9 @@ function startBudgetSync(bridge) {
     if (!(input instanceof HTMLInputElement) || !input.files?.[0]) return;
     void restoreBackup(bridge, input.files[0]);
     input.value = "";
+  });
+  installPullRefresh({
+    onRefresh: () => controller.refresh()
   });
   void controller.start();
 }

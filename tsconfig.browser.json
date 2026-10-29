@@ -9,5 +9,5 @@
     "types": [],
     "skipLibCheck": true
   },
-  "include": ["src/browser-sync.ts", "src/sync-client.ts", "src/merge.ts", "src/types.ts"]
+  "include": ["src/browser-sync.ts", "src/pull-refresh.ts", "src/sync-client.ts", "src/merge.ts", "src/types.ts"]
 }
