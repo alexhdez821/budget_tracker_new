@@ -295,6 +295,11 @@ function sameList(a, b) {
 }
 
 // src/sync-client.ts
+function isBlankHousehold(state) {
+  const hasItems = Object.values(state.budgetBreakdown).some((items) => items.length > 0);
+  const entries = state.transactions.length + state.freeMoneyTransactions.length + state.fondoTransactions.length + state.checkingTransactions.length;
+  return entries === 0 && !hasItems && Object.keys(state.merchantDatabase).length === 0 && Number(state.checkingStartingBalance) === 0;
+}
 var SYNC_META_KEY = "budgetSyncMeta";
 var SyncText = {
   checking: "Checking the shared account\u2026",
@@ -324,11 +329,14 @@ function createSyncController(deps) {
     );
     return run;
   }
+  function shouldImport() {
+    return historyAtBoot && !isBlankHousehold(deps.getState());
+  }
   function noteLocalChange() {
     pending = true;
     if (!started) return;
     if (!meta?.attached) {
-      if (historyAtBoot) {
+      if (shouldImport()) {
         deps.setBanner("import");
         deps.setStatus(SyncText.importReady);
         return;
@@ -360,7 +368,7 @@ function createSyncController(deps) {
     meta = loadMeta(deps.storage);
     if (remote.kind === "status") {
       if (!meta?.attached) {
-        if (historyAtBoot) {
+        if (shouldImport()) {
           deps.setBanner("import");
           deps.setStatus(remote.status === 401 ? SyncText.unauthorized : remote.status === 503 ? SyncText.notConfigured : SyncText.importReady);
         } else {
@@ -383,7 +391,7 @@ function createSyncController(deps) {
       else deps.setStatus(remote.kind === "offline" ? SyncText.offline : SyncText.error);
       return;
     }
-    if (historyAtBoot) {
+    if (shouldImport()) {
       deps.setBanner("import");
       deps.setStatus(SyncText.importReady);
       started = true;
@@ -434,15 +442,18 @@ function createSyncController(deps) {
       await doFlush();
       return;
     }
-    meta = { version: 0, base: cloneState(deps.getState()), attached: true, imported: false, conflict: false };
+    meta = { version: remote.body.version, base: cloneState(remote.body.state), attached: true, imported: false, conflict: false };
     saveMeta(deps.storage, meta);
-    deps.setBanner(null);
-    deps.setStatus(SyncText.synced);
     started = true;
+    if (!statesEqual(deps.getState(), meta.base)) await doFlush();
+    else {
+      deps.setBanner(null);
+      deps.setStatus(SyncText.synced);
+    }
   }
   async function doFlush(depth = 0) {
     if (!meta?.attached) {
-      if (historyAtBoot) {
+      if (shouldImport()) {
         deps.setBanner("import");
         deps.setStatus(SyncText.importReady);
       } else {
@@ -529,8 +540,14 @@ function createSyncController(deps) {
   async function applyRemoteIfClean(body) {
     if (!meta) return;
     if (!statesEqual(deps.getState(), meta.base)) return;
-    if (body.version === meta.version && statesEqual(body.state, meta.base)) {
-      deps.setStatus(SyncText.synced);
+    if (body.version === meta.version) {
+      if (statesEqual(body.state, meta.base)) {
+        deps.setStatus(SyncText.synced);
+        return;
+      }
+      meta = { ...meta, base: cloneState(body.state) };
+      saveMeta(deps.storage, meta);
+      await doFlush();
       return;
     }
     deps.applyState(body.state);
@@ -543,7 +560,7 @@ function createSyncController(deps) {
     await enqueue(async () => {
       if (!started) return;
       if (!meta?.attached) {
-        if (!historyAtBoot) await doStart();
+        if (!shouldImport()) await doStart();
         return;
       }
       if (meta.conflict) return;

@@ -1373,9 +1373,14 @@
             return ['Paycheck', 'Subscriptions', 'Transportation', 'Car Payment', 'Food & Hygiene', 'Free Money'];
         }
 
-        // Data structure
-        let categoryList = JSON.parse(localStorage.getItem('categoryList')) || getDefaultCategoryList();
-        let budgets = JSON.parse(localStorage.getItem('budgets')) || getDefaultCategories();
+        // Data structure. An empty list is not a saved budget: the shared database
+        // starts with no categories, and "[]" is truthy so it must not stick.
+        let categoryList = JSON.parse(localStorage.getItem('categoryList') || 'null');
+        if (!Array.isArray(categoryList) || categoryList.length === 0) categoryList = getDefaultCategoryList();
+        let budgets = JSON.parse(localStorage.getItem('budgets') || 'null');
+        if (!budgets || typeof budgets !== 'object' || Array.isArray(budgets) || Object.keys(budgets).length === 0) {
+            budgets = getDefaultCategories();
+        }
 
         // Ensure all categories in list have budget entries
         categoryList.forEach(cat => {
