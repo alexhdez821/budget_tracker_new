@@ -1,5 +1,6 @@
+import { isLegacyExport, legacyLocalStorageToState } from "./legacy";
 import type { BankTransaction, BudgetState, Snapshot } from "./types";
-import { readBankTransactions, readSnapshot, restoreBackup, type StateResult } from "./state";
+import { importState, readBankTransactions, readSnapshot, restoreBackup, type StateResult } from "./state";
 
 export interface BackupFile {
   kind: "budget-tracker-backup";
@@ -22,8 +23,13 @@ export async function buildBackup(db: D1Database, now = new Date().toISOString()
 }
 
 export async function applyBackup(db: D1Database, body: unknown, email: string): Promise<StateResult> {
-  if (!body || typeof body !== "object") return { ok: false, status: 400, error: "Expected a backup file" };
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { ok: false, status: 400, error: "Expected a backup file" };
   const raw = body as Record<string, unknown>;
+  if (isLegacyExport(raw)) {
+    const converted = legacyLocalStorageToState(raw);
+    if (!converted.ok) return { ok: false, status: 400, error: converted.error };
+    return importState(db, converted.state, email);
+  }
   if (raw.kind !== undefined && raw.kind !== "budget-tracker-backup") {
     return { ok: false, status: 400, error: "Unrecognized backup" };
   }

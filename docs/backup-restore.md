@@ -1,5 +1,7 @@
 # Backup and restore
 
+An export from the old Netlify page is a different file. See [import-old-app.md](import-old-app.md). **Restore** accepts that file and this backup.
+
 The shared budget can be downloaded as one JSON file and written back later. The file includes the household state and any future bank-import rows.
 
 The Worker only accepts the restore from a same-origin request, and only when `baseVersion` is the version currently stored. If the other phone saved in the meantime, the restore returns **409** and does not write.

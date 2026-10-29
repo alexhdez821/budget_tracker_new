@@ -104,7 +104,9 @@ async function restoreBackup(bridge: BudgetBridge, file: File): Promise<void> {
     return;
   }
   if (!response.ok) {
-    window.alert("Could not restore that file.");
+    const failure = (await response.json().catch(() => null)) as { error?: unknown } | null;
+    const message = failure && typeof failure.error === "string" ? failure.error : "Could not restore that file.";
+    window.alert(message);
     return;
   }
   const saved = (await response.json()) as { state?: BudgetState };
