@@ -110,7 +110,8 @@ describe("sync controller", () => {
         if (init?.method === "PUT") {
           const body = JSON.parse(String(init.body)) as { baseVersion: number; state: BudgetState };
           puts.push(body);
-          if (puts.length === 1) {
+          if (puts.length === 1) return response(200, { version: 1, state: body.state });
+          if (puts.length === 2) {
             const original = body.state.transactions[0];
             return response(409, {
               version: 4,
@@ -141,8 +142,8 @@ describe("sync controller", () => {
     };
     controller.noteLocalChange();
     await controller.flushNow();
-    expect(puts).toHaveLength(2);
-    expect(puts[1]?.baseVersion).toBe(4);
+    expect(puts).toHaveLength(3);
+    expect(puts[2]?.baseVersion).toBe(4);
     expect(local.transactions.map((entry) => entry.id).sort()).toEqual([10, 50, 60]);
   });
 
@@ -217,13 +218,137 @@ describe("sync controller", () => {
       },
     });
     await controller.start();
+    expect(puts).toHaveLength(1);
     online = false;
     local = { ...local, checkingStartingBalance: 80 };
     controller.noteLocalChange();
     await controller.flushNow();
-    expect(puts).toHaveLength(0);
+    expect(puts).toHaveLength(1);
     online = true;
     await controller.flushNow();
+    expect(puts).toHaveLength(2);
+  });
+
+  it("uploads local categories into an empty version-0 database and does not wipe them on refresh", async () => {
+    const puts: Array<{ baseVersion: number; state: BudgetState }> = [];
+    let server = emptyState();
+    let version = 0;
+    let local = freshDefaults();
+    const controller = createSyncController({
+      storage: memoryStore(),
+      delayMs: 0,
+      online: () => true,
+      hasLocalHistory: () => false,
+      getState: () => local,
+      applyState: (state) => {
+        local = state;
+      },
+      setStatus: () => undefined,
+      setBanner: () => undefined,
+      fetchImpl: async (_input, init) => {
+        if (init?.method === "PUT") {
+          const body = JSON.parse(String(init.body)) as { baseVersion: number; state: BudgetState };
+          puts.push(body);
+          version = 1;
+          server = body.state;
+          return response(200, { version, state: server });
+        }
+        return response(200, { version, state: server });
+      },
+    });
+
+    await controller.start();
     expect(puts).toHaveLength(1);
+    expect(puts[0]?.baseVersion).toBe(0);
+    expect(puts[0]?.state.categoryList).toContain("Food & Hygiene");
+    expect(local.categoryList).toContain("Food & Hygiene");
+    await controller.refresh();
+    expect(local.categoryList).toContain("Food & Hygiene");
+    expect(puts).toHaveLength(1);
+
+    local = {
+      ...local,
+      transactions: [
+        {
+          id: 70,
+          description: "Market",
+          store: "Walmart",
+          amount: 9,
+          date: "2026-04-02",
+          type: "expense",
+          category: "Food & Hygiene",
+        },
+      ],
+    };
+    controller.noteLocalChange();
+    await controller.flushNow();
+    expect(puts).toHaveLength(2);
+    expect(puts[1]?.baseVersion).toBe(1);
+    expect(server.transactions).toHaveLength(1);
+    expect(local.categoryList.length).toBeGreaterThan(0);
+  });
+
+  it("does not replace categories when a previous session marked the defaults as synced", async () => {
+    let local = freshDefaults();
+    const puts: BudgetState[] = [];
+    let server = emptyState();
+    const controller = createSyncController({
+      storage: memoryStore({
+        [SYNC_META_KEY]: JSON.stringify({
+          version: 0,
+          base: local,
+          attached: true,
+          imported: false,
+          conflict: false,
+        }),
+      }),
+      delayMs: 0,
+      online: () => true,
+      hasLocalHistory: () => true,
+      historyAtBoot: true,
+      getState: () => local,
+      applyState: (state) => {
+        local = state;
+      },
+      setStatus: () => undefined,
+      setBanner: () => undefined,
+      fetchImpl: async (_input, init) => {
+        if (init?.method === "PUT") {
+          const body = JSON.parse(String(init.body)) as { state: BudgetState };
+          puts.push(body.state);
+          server = body.state;
+          return response(200, { version: 1, state: server });
+        }
+        return response(200, { version: 0, state: server });
+      },
+    });
+
+    await controller.start();
+    expect(local.categoryList).toContain("Subscriptions");
+    expect(puts).toHaveLength(1);
+    expect(server.categoryList).toContain("Subscriptions");
   });
 });
+
+function freshDefaults(): BudgetState {
+  return {
+    ...emptyState(),
+    categoryList: ["Paycheck", "Subscriptions", "Transportation", "Car Payment", "Food & Hygiene", "Free Money"],
+    budgets: {
+      Paycheck: 0,
+      Subscriptions: 159,
+      Transportation: 455,
+      "Car Payment": 384,
+      "Food & Hygiene": 281,
+      "Free Money": 221,
+    },
+    budgetBreakdown: {
+      Paycheck: [],
+      Subscriptions: [],
+      Transportation: [],
+      "Car Payment": [],
+      "Food & Hygiene": [],
+      "Free Money": [],
+    },
+  };
+}

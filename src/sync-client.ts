@@ -1,6 +1,17 @@
 import { cloneState, mergeStates, statesEqual } from "./merge";
 import type { BudgetState } from "./types";
 
+/** No entries, budget lines, merchants, or starting balance. Default category names alone do not count. */
+export function isBlankHousehold(state: BudgetState): boolean {
+  const hasItems = Object.values(state.budgetBreakdown).some((items) => items.length > 0);
+  const entries =
+    state.transactions.length +
+    state.freeMoneyTransactions.length +
+    state.fondoTransactions.length +
+    state.checkingTransactions.length;
+  return entries === 0 && !hasItems && Object.keys(state.merchantDatabase).length === 0 && Number(state.checkingStartingBalance) === 0;
+}
+
 export const SYNC_META_KEY = "budgetSyncMeta";
 
 export const SyncText = {
@@ -77,11 +88,15 @@ export function createSyncController(deps: {
     return run;
   }
 
+  function shouldImport(): boolean {
+    return historyAtBoot && !isBlankHousehold(deps.getState());
+  }
+
   function noteLocalChange(): void {
     pending = true;
     if (!started) return;
     if (!meta?.attached) {
-      if (historyAtBoot) {
+      if (shouldImport()) {
         deps.setBanner("import");
         deps.setStatus(SyncText.importReady);
         return;
@@ -116,7 +131,7 @@ export function createSyncController(deps: {
 
     if (remote.kind === "status") {
       if (!meta?.attached) {
-        if (historyAtBoot) {
+        if (shouldImport()) {
           deps.setBanner("import");
           deps.setStatus(remote.status === 401 ? SyncText.unauthorized : remote.status === 503 ? SyncText.notConfigured : SyncText.importReady);
         } else {
@@ -141,7 +156,7 @@ export function createSyncController(deps: {
       return;
     }
 
-    if (historyAtBoot) {
+    if (shouldImport()) {
       deps.setBanner("import");
       deps.setStatus(SyncText.importReady);
       started = true;
@@ -196,16 +211,21 @@ export function createSyncController(deps: {
       return;
     }
 
-    meta = { version: 0, base: cloneState(deps.getState()), attached: true, imported: false, conflict: false };
+    // Version 0 with no saved rows is an empty database. Keep this phone's
+    // categories and upload them. Do not mark the defaults as already synced.
+    meta = { version: remote.body.version, base: cloneState(remote.body.state), attached: true, imported: false, conflict: false };
     saveMeta(deps.storage, meta);
-    deps.setBanner(null);
-    deps.setStatus(SyncText.synced);
     started = true;
+    if (!statesEqual(deps.getState(), meta.base)) await doFlush();
+    else {
+      deps.setBanner(null);
+      deps.setStatus(SyncText.synced);
+    }
   }
 
   async function doFlush(depth = 0): Promise<void> {
     if (!meta?.attached) {
-      if (historyAtBoot) {
+      if (shouldImport()) {
         deps.setBanner("import");
         deps.setStatus(SyncText.importReady);
       } else {
@@ -294,8 +314,16 @@ export function createSyncController(deps: {
   async function applyRemoteIfClean(body: StateBody): Promise<void> {
     if (!meta) return;
     if (!statesEqual(deps.getState(), meta.base)) return;
-    if (body.version === meta.version && statesEqual(body.state, meta.base)) {
-      deps.setStatus(SyncText.synced);
+    if (body.version === meta.version) {
+      if (statesEqual(body.state, meta.base)) {
+        deps.setStatus(SyncText.synced);
+        return;
+      }
+      // Same version, different rows: this phone's copy was never uploaded.
+      // Do not replace it with the empty database.
+      meta = { ...meta, base: cloneState(body.state) };
+      saveMeta(deps.storage, meta);
+      await doFlush();
       return;
     }
     deps.applyState(body.state);
@@ -309,7 +337,7 @@ export function createSyncController(deps: {
     await enqueue(async () => {
       if (!started) return;
       if (!meta?.attached) {
-        if (!historyAtBoot) await doStart();
+        if (!shouldImport()) await doStart();
         return;
       }
       if (meta.conflict) return;
