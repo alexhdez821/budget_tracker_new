@@ -1,0 +1,18 @@
+{
+  "name": "Monthly Budget Tracker",
+  "short_name": "Budget",
+  "description": "Shared household budget for two phones",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/budget-app.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

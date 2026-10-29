@@ -1,8 +1,24 @@
 {
   "name": "budget-tracker",
   "version": "1.0.0",
-  "description": "Budget tracker with AI-powered transaction reading",
+  "private": true,
+  "type": "module",
+  "description": "Shared household budget tracker on a Cloudflare Worker and D1",
+  "scripts": {
+    "build:client": "esbuild src/browser-sync.ts --bundle --format=esm --outfile=web/sync.js",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.browser.json",
+    "test": "vitest run",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261023.1",
+    "esbuild": "^0.25.11",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.45.0"
   }
 }
