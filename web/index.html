@@ -873,6 +873,44 @@
             cursor: pointer;
         }
 
+        html.is-custom-pull {
+            overscroll-behavior-y: none;
+        }
+
+        .pull-refresh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 80;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            background: #f5f7fa;
+            transform: translateY(calc(-100% + var(--pull, 0px)));
+        }
+
+        .pull-refresh-spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid rgba(102, 126, 234, 0.25);
+            border-top-color: #667eea;
+            opacity: 0.35;
+        }
+
+        .pull-refresh.is-armed .pull-refresh-spinner,
+        .pull-refresh.is-refreshing .pull-refresh-spinner {
+            opacity: 1;
+            animation: pull-spin 0.7s linear infinite;
+        }
+
+        @keyframes pull-spin {
+            to { transform: rotate(360deg); }
+        }
+
         .sync-bar {
             position: fixed;
             left: 0;

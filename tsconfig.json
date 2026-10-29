@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.d.ts"],
-  "exclude": ["src/browser-sync.ts"]
+  "exclude": ["src/browser-sync.ts", "src/pull-refresh.ts"]
 }
