@@ -65,7 +65,7 @@ function env(overrides: Partial<Env> = {}): Env {
     ASSETS: {
       async fetch(request: Request) {
         const path = new URL(request.url).pathname;
-        if (path === "/index.html") {
+        if (path === "/" || path === "/index.html") {
           return new Response('<style nonce="__CSP_NONCE__"></style><script nonce="__CSP_NONCE__"></script>', {
             headers: { "content-type": "text/html; charset=utf-8" },
           });
@@ -124,6 +124,40 @@ describe("worker", () => {
     expect(html).toContain(`nonce="${nonce}"`);
     expect(page.headers.get("cache-control")).toContain("no-store");
     expect(page.headers.get("x-frame-options")).toBe("DENY");
+  });
+
+  it("serves / without rewriting it to /index.html, and does not follow an asset redirect", async () => {
+    const token = await jwt();
+    const paths: string[] = [];
+    const redirectMode: string[] = [];
+    const assetsEnv = env({
+      ASSETS: {
+        async fetch(request: Request) {
+          paths.push(new URL(request.url).pathname);
+          redirectMode.push(request.redirect);
+          if (new URL(request.url).pathname === "/index.html") {
+            return new Response(null, { status: 307, headers: { Location: "/" } });
+          }
+          return new Response('<style nonce="__CSP_NONCE__"></style><script nonce="__CSP_NONCE__"></script>', {
+            headers: { "content-type": "text/html; charset=utf-8" },
+          });
+        },
+      } as Env["ASSETS"],
+    });
+
+    const page = await worker.fetch(new Request("https://budget.example/", { headers: { "Cf-Access-Jwt-Assertion": token } }), assetsEnv);
+    expect(page.status).toBe(200);
+    expect(paths).toEqual(["/"]);
+    expect(redirectMode).toEqual(["manual"]);
+
+    paths.length = 0;
+    const redirected = await worker.fetch(
+      new Request("https://budget.example/index.html", { headers: { "Cf-Access-Jwt-Assertion": token } }),
+      assetsEnv,
+    );
+    expect(redirected.status).toBe(307);
+    expect(redirected.headers.get("Location")).toBe("/");
+    expect(paths).toEqual(["/index.html"]);
   });
 
   it("reads a screenshot through the worker without returning the API key", async () => {

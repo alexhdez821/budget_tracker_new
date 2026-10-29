@@ -24,9 +24,19 @@ async function serveAsset(request: Request, env: Env): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return json({ error: "Method not allowed" }, 405);
   }
-  const assetUrl = new URL(request.url);
-  if (assetUrl.pathname === "/") assetUrl.pathname = "/index.html";
-  const asset = await env.ASSETS.fetch(new Request(assetUrl, request));
+  // Ask Assets for the original path. Do not rewrite "/" to "/index.html":
+  // html_handling redirects /index.html back to "/", which loops forever.
+  // redirect: "manual" so a 307 is returned to the browser instead of followed
+  // back into this Worker (run_worker_first would re-enter on the next hop).
+  const asset = await env.ASSETS.fetch(new Request(request, { redirect: "manual" }));
+  if (asset.status >= 300 && asset.status < 400) {
+    const headers = new Headers(asset.headers);
+    headers.set("Cache-Control", "no-store, private");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("Referrer-Policy", "no-referrer");
+    headers.set("X-Frame-Options", "DENY");
+    return new Response(null, { status: asset.status, headers });
+  }
   const contentType = asset.headers.get("content-type") ?? "";
   if (contentType.includes("text/html")) {
     const nonce = crypto.randomUUID().replaceAll("-", "");
