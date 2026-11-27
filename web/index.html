@@ -1452,6 +1452,31 @@
         let checkingStartingBalance = parseFloat(localStorage.getItem('checkingStartingBalance')) || 0;
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
+
+        /* entry-date:start */
+        // A new entry follows the month on screen. This month stays today's local date.
+        // Any other month uses the 2nd, the day already used for early entries in a future month.
+        function formatLocalDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
+        function defaultEntryDate(viewedYear, viewedMonth, now) {
+            if (viewedYear === now.getFullYear() && viewedMonth === now.getMonth()) {
+                return formatLocalDate(now);
+            }
+            const month = String(viewedMonth + 1).padStart(2, '0');
+            return viewedYear + '-' + month + '-02';
+        }
+
+        // Null means leave the field alone: an edit in progress, or a date the user set.
+        function entryDateToApply(options) {
+            if (!options.force && (options.editing || options.touched)) return null;
+            return defaultEntryDate(options.viewedYear, options.viewedMonth, options.now);
+        }
+        /* entry-date:end */
         let currentFilter = 'all';
         let amountFilterAmount = null;
         let currentSortOrder = 'date_desc';
@@ -1706,14 +1731,54 @@
         }
 
         // Initialize
-        const dateInput = document.getElementById('date');
-        dateInput.valueAsDate = new Date();
-        const checkingDateInput = document.getElementById('checking-date');
-        checkingDateInput.valueAsDate = new Date();
-        const freeDateInput = document.getElementById('free-date');
-        freeDateInput.valueAsDate = new Date();
-        const fondoDateInput = document.getElementById('fondo-date');
-        fondoDateInput.valueAsDate = new Date();
+        const entryDateFields = [
+            { id: 'date', editing: () => editingTransactionId != null },
+            { id: 'checking-date', editing: () => editingCheckingId != null },
+            { id: 'free-date', editing: () => editingFreeMoneyId != null },
+            { id: 'fondo-date', editing: () => editingFondoId != null },
+        ];
+
+        function applyEntryDate(id, options) {
+            const input = document.getElementById(id);
+            const field = entryDateFields.find((item) => item.id === id);
+            if (!input || !field) return;
+            const next = entryDateToApply({
+                force: Boolean(options && options.force),
+                editing: field.editing(),
+                touched: input.dataset.dateTouched === '1',
+                viewedYear: currentYear,
+                viewedMonth: currentMonth,
+                now: (options && options.now) || new Date(),
+            });
+            if (next == null) return;
+            input.value = next;
+            input.dataset.dateAutofill = next;
+            delete input.dataset.dateTouched;
+        }
+
+        function refreshEntryDates(options) {
+            entryDateFields.forEach((field) => applyEntryDate(field.id, options));
+        }
+
+        function keepChosenEntryDate(id, value) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.value = value;
+            input.dataset.dateTouched = '1';
+        }
+
+        entryDateFields.forEach((field) => {
+            const input = document.getElementById(field.id);
+            if (!input) return;
+            const markTouched = () => {
+                if (input.value !== (input.dataset.dateAutofill || '')) {
+                    input.dataset.dateTouched = '1';
+                }
+            };
+            input.addEventListener('input', markTouched);
+            input.addEventListener('change', markTouched);
+        });
+        refreshEntryDates({ force: true });
         const imageInput = document.getElementById('image-input');
 
         // Image upload handler
@@ -1850,7 +1915,7 @@
                 document.getElementById('amount').value = transaction.amount;
             }
             if (transaction.date) {
-                document.getElementById('date').value = transaction.date;
+                keepChosenEntryDate('date', transaction.date);
             }
 
             // Try to match merchant to category
@@ -2152,6 +2217,7 @@
                 currentYear--;
             }
             updateDisplay();
+            refreshEntryDates();
         }
 
         function updateMonthDisplay() {
@@ -2546,7 +2612,7 @@
             document.getElementById('description').value = '';
             document.getElementById('store').value = '';
             document.getElementById('amount').value = '';
-            document.getElementById('date').valueAsDate = new Date();
+            applyEntryDate('date', { force: true });
             
             // Reset type to expense - find the expense button in the expenses tab specifically
             const expenseTabTypeBtns = document.querySelector('#expenses-view .type-buttons').querySelectorAll('.type-btn');
@@ -2589,7 +2655,7 @@
             document.getElementById('description').value = transaction.description;
             document.getElementById('store').value = transaction.store;
             document.getElementById('amount').value = transaction.amount;
-            document.getElementById('date').value = transaction.date;
+            keepChosenEntryDate('date', transaction.date);
             
             // Set active type button
             document.querySelectorAll('.type-btn').forEach(btn => {
@@ -2903,7 +2969,7 @@
             // Clear inputs
             document.getElementById('free-description').value = '';
             document.getElementById('free-amount').value = '';
-            document.getElementById('free-date').valueAsDate = new Date();
+            applyEntryDate('free-date', { force: true });
             
             // Reset type to "in"
             document.querySelectorAll('#free-type-in, #free-type-out').forEach(btn => btn.classList.remove('active'));
@@ -2920,7 +2986,7 @@
 
             document.getElementById('free-description').value = transaction.description;
             document.getElementById('free-amount').value = transaction.amount;
-            document.getElementById('free-date').value = transaction.date;
+            keepChosenEntryDate('free-date', transaction.date);
             
             // Set active type button
             document.querySelectorAll('#free-type-in, #free-type-out').forEach(btn => {
@@ -3085,7 +3151,7 @@
             // Clear inputs
             document.getElementById('fondo-description').value = '';
             document.getElementById('fondo-amount').value = '';
-            document.getElementById('fondo-date').valueAsDate = new Date();
+            applyEntryDate('fondo-date', { force: true });
             
             // Reset type to "in"
             document.querySelectorAll('#fondo-type-in, #fondo-type-out').forEach(btn => btn.classList.remove('active'));
@@ -3102,7 +3168,7 @@
 
             document.getElementById('fondo-description').value = transaction.description;
             document.getElementById('fondo-amount').value = transaction.amount;
-            document.getElementById('fondo-date').value = transaction.date;
+            keepChosenEntryDate('fondo-date', transaction.date);
             
             // Set active type button
             document.querySelectorAll('#fondo-type-in, #fondo-type-out').forEach(btn => {
@@ -3377,7 +3443,7 @@
             // Clear inputs
             document.getElementById('checking-description').value = '';
             document.getElementById('checking-amount').value = '';
-            document.getElementById('checking-date').valueAsDate = new Date();
+            applyEntryDate('checking-date', { force: true });
             
             // Reset type to "out"
             document.querySelectorAll('#checking-type-in, #checking-type-out').forEach(btn => btn.classList.remove('active'));
@@ -3394,7 +3460,7 @@
 
             document.getElementById('checking-description').value = transaction.description;
             document.getElementById('checking-amount').value = transaction.amount;
-            document.getElementById('checking-date').value = transaction.date;
+            keepChosenEntryDate('checking-date', transaction.date);
             
             // Set active type button
             document.querySelectorAll('#checking-type-in, #checking-type-out').forEach(btn => {
